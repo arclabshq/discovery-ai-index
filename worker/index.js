@@ -586,7 +586,7 @@ async function fetchHandler(request, env) {
 
   if (isAppNavigation) {
     const indexUrl = new URL(request.url);
-    indexUrl.pathname = "/index.html";
+    indexUrl.pathname = "/";
     indexUrl.search = "";
     return env.ASSETS.fetch(new Request(indexUrl, request));
   }
@@ -598,7 +598,7 @@ async function fetchHandler(request, env) {
   }
 
   const indexUrl = new URL(request.url);
-  indexUrl.pathname = "/index.html";
+  indexUrl.pathname = "/";
   indexUrl.search = "";
   return env.ASSETS.fetch(new Request(indexUrl, request));
 }

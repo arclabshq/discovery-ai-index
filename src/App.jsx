@@ -20,6 +20,15 @@ const PAGE_TITLES = {
   "/newsroom": "Newsroom — Discovery Index",
 };
 
+const TICKER_FIELD_LABELS = {
+  Mathematics: "MATH",
+  "Computer science": "COMPUTING",
+  "Materials science": "MATERIALS",
+  Biology: "BIOLOGY",
+  Medicine: "HEALTHCARE",
+  Biomedicine: "HEALTHCARE",
+};
+
 function formatDate(value) {
   if (!value) return "Date pending";
   return new Intl.DateTimeFormat("en-US", {
@@ -33,6 +42,10 @@ function formatDate(value) {
 function normalizePath(pathname) {
   if (pathname === "/") return pathname;
   return pathname.replace(/\/+$/, "");
+}
+
+function tickerField(field) {
+  return TICKER_FIELD_LABELS[field] || field.toUpperCase();
 }
 
 function Header({ path }) {
@@ -61,32 +74,38 @@ function Header({ path }) {
 }
 
 function NewsTicker({ registry, state }) {
-  const count =
-    state === "ready" ? `${registry.verified.length} verified records` : "Opening registry";
-  const latest = registry.verified[0]?.title || "Evidence first";
-  const items = [
-    count,
-    "Primary sources",
-    `Latest: ${latest}`,
-    "Human editorial review",
-    "No automatic publishing",
-  ];
+  const items =
+    state === "ready"
+      ? registry.verified.map(
+          (discovery) =>
+            `${tickerField(discovery.field)} BREAKTHROUGH · ${discovery.aiSystem.toUpperCase()} · ${discovery.summary}`,
+        )
+      : [];
 
   return (
-    <div className="ticker" aria-label={items.join(". ")}>
-      <strong>REGISTRY</strong>
+    <div
+      className="ticker"
+      aria-label={
+        items.length ? `Verified breakthroughs. ${items.join(". ")}` : "Loading breakthroughs"
+      }
+    >
+      <strong>BREAKTHROUGHS</strong>
       <div className="ticker-window">
-        <div className="ticker-track">
-          {[0, 1].map((copy) => (
-            <div className="ticker-group" aria-hidden={copy === 1} key={copy}>
-              {items.map((item) => (
-                <span className="ticker-item" key={`${copy}-${item}`}>
-                  {item}
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
+        {items.length ? (
+          <div className="ticker-track">
+            {[0, 1].map((copy) => (
+              <div className="ticker-group" aria-hidden={copy === 1} key={copy}>
+                {items.map((item) => (
+                  <span className="ticker-item" key={`${copy}-${item}`}>
+                    {item}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="ticker-loading">Opening verified breakthroughs…</span>
+        )}
       </div>
     </div>
   );
@@ -133,8 +152,8 @@ function VerifiedTable({ discoveries }) {
           <tr>
             <th scope="col">Announced</th>
             <th scope="col">Field</th>
-            <th scope="col">Discovery</th>
-            <th scope="col">Plain-language summary</th>
+            <th scope="col">Breakthrough</th>
+            <th scope="col">Why it matters</th>
             <th scope="col">AI system</th>
             <th scope="col">Evidence</th>
           </tr>
@@ -142,18 +161,21 @@ function VerifiedTable({ discoveries }) {
         <tbody>
           {discoveries.map((discovery) => (
             <tr key={discovery.id}>
-              <td className="record-date">
+              <td className="record-date" data-label="Announced">
                 <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
               </td>
-              <td className="record-field">{discovery.field}</td>
-              <td className="record-title">
+              <td className="record-field" data-label="Field">{discovery.field}</td>
+              <td className="record-title" data-label="What changed">
                 <h3>{discovery.title}</h3>
+                <p>{discovery.summary}</p>
               </td>
-              <td className="record-summary">{discovery.summary}</td>
-              <td className="record-system">
+              <td className="record-summary" data-label="Why it matters">
+                {discovery.whyItMatters}
+              </td>
+              <td className="record-system" data-label="AI system">
                 <strong>{discovery.aiSystem}</strong>
               </td>
-              <td className="record-evidence">
+              <td className="record-evidence" data-label="Evidence">
                 <span className="status verified">{STATUS_COPY[discovery.status]}</span>
                 <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
                   Primary source <span aria-hidden="true">↗</span>
@@ -178,7 +200,10 @@ function ReviewCard({ discovery }) {
         <p className="review-field">{discovery.field}</p>
         <strong className="review-system">{discovery.aiSystem}</strong>
         <h3>{discovery.title}</h3>
-        <p>{discovery.summary}</p>
+        <div className="review-plain-language">
+          <p><b>What changed</b>{discovery.summary}</p>
+          <p><b>Why it matters</b>{discovery.whyItMatters}</p>
+        </div>
       </div>
       <div className="review-evidence">
         <b>What remains open</b>
@@ -220,6 +245,44 @@ function ReviewLane({ discoveries, compact = false }) {
   );
 }
 
+function HomeMethod() {
+  const steps = [
+    ["Find the claim", "We monitor primary research and credible announcements for meaningful AI-assisted results."],
+    ["Trace the evidence", "We check what the AI contributed, what humans checked, and whether the headline matches the source."],
+    ["Explain it plainly", "Every record answers two questions: what changed, and why should anyone care?"],
+    ["Assign a status", "An editor records verified, under review, or rejected. Nothing publishes automatically."],
+  ];
+
+  return (
+    <section className="home-method" aria-labelledby="home-method-title">
+      <div className="home-method-heading">
+        <div>
+          <p className="section-kicker">How it works</p>
+          <h2 id="home-method-title">A claim has to earn its place in the public record.</h2>
+        </div>
+        <div>
+          <p>
+            AI discovery headlines move quickly. We slow them down long enough to check the
+            evidence, explain the result, and show what is known—and what is not.
+          </p>
+          <a className="text-link" href="/how-it-works">
+            Read the full editorial method <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+      <ol>
+        {steps.map(([title, copy], index) => (
+          <li key={title}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <h3>{title}</h3>
+            <p>{copy}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function HomePage({ registry, state }) {
   const [field, setField] = useState("All fields");
   const fields = useMemo(
@@ -236,14 +299,38 @@ function HomePage({ registry, state }) {
 
   return (
     <>
-      <section className="registry-intro" id="registry">
+      <section className="registry-intro">
+        <p className="section-kicker">The public registry of AI-assisted discovery</p>
+        <h1>See what AI is helping us discover—and why it matters.</h1>
+        <p>
+          Discovery Index turns documented breakthroughs in math, science, medicine, and
+          computing into public proof points anyone can understand. See what changed, why it
+          matters beyond the lab, and the evidence behind every verified claim.
+        </p>
+      </section>
+
+      <section className="purpose-grid" aria-label="Why this registry exists">
+        <article>
+          <span>01</span>
+          <h2>See the pace</h2>
+          <p>Follow verified discoveries over time—not benchmark scores or launch-day claims.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h2>Understand the significance</h2>
+          <p>Learn what each result could change in language written for curious non-specialists.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h2>Trace the proof</h2>
+          <p>Open the paper, proof, code, or research announcement behind every record.</p>
+        </article>
+      </section>
+
+      <section className="registry-toolbar" id="registry">
         <div>
-          <p className="section-kicker">Verified registry</p>
-          <h1>AI-assisted discoveries, with receipts.</h1>
-          <p>
-            A plain-language index of results that can be traced to primary evidence. Start with
-            the table; open the source when something catches your eye.
-          </p>
+          <p className="section-kicker">Verified breakthroughs</p>
+          <h2>What changed. Why it matters. Where the proof lives.</h2>
         </div>
         <label>
           Field
@@ -269,6 +356,7 @@ function HomePage({ registry, state }) {
           <ReviewLane discoveries={registry.underReview} compact />
         </>
       )}
+      <HomeMethod />
     </>
   );
 }
@@ -288,39 +376,43 @@ function AboutPage() {
     <>
       <PageHero
         kicker="About the index"
-        title="A public index for a simple question."
-        deck="When an AI system is credited with a scientific or mathematical result, what happened—and what evidence supports the claim?"
+        title="A public record of what AI is helping us discover."
+        deck="Breakthrough headlines are arriving faster than most people can evaluate them. Discovery Index turns specialist research into evidence-backed proof points anyone can understand."
       />
       <section className="editorial-layout">
         <div className="prose">
-          <h2>Built for curious readers</h2>
+          <h2>Why this record matters</h2>
           <p>
-            Discovery Index translates technical results without sanding off the distinction
-            between a model’s suggestion, a checked result, and a published finding. Each
-            verified record names the system, dates the result, and links directly to the
-            research.
+            Benchmarks show what a model can do in a test. This registry shows something
+            different: documented moments when AI helped produce a new proof, prediction,
+            algorithm, material candidate, or scientific lead.
           </p>
-          <h2>Deliberately narrow</h2>
           <p>
-            This is not a catalog of every AI paper or product claim. A record belongs here when
-            AI played a material role in producing a new result and the result can be inspected
-            through primary evidence.
+            The goal is to make the pace of real discovery visible beyond the fields where it
+            happens. Each record explains the result in ordinary language, names the AI’s role,
+            and links to the strongest available evidence.
+          </p>
+          <h2>Evidence before excitement</h2>
+          <p>
+            This is not a catalog of every AI paper, demo, or company announcement. A verified
+            record belongs here only when AI played a material role in producing a new result and
+            that result can be checked through primary evidence.
           </p>
         </div>
         <aside className="fact-card">
-          <p className="section-kicker">The record answers</p>
+          <p className="section-kicker">Every record answers</p>
           <dl>
             <div>
               <dt>What changed?</dt>
-              <dd>A plain account of the new result.</dd>
+              <dd>The new result, without abstract-style language.</dd>
             </div>
             <div>
-              <dt>Which system?</dt>
-              <dd>The named model, agent, or method.</dd>
+              <dt>Why does it matter?</dt>
+              <dd>The scientific or real-world benefit a curious reader can understand.</dd>
             </div>
             <div>
-              <dt>Why trust it?</dt>
-              <dd>The strongest available primary evidence.</dd>
+              <dt>Where is the proof?</dt>
+              <dd>The paper, proof, code, or announcement behind the claim.</dd>
             </div>
           </dl>
         </aside>
@@ -330,40 +422,52 @@ function AboutPage() {
 }
 
 function HowItWorksPage() {
+  const steps = [
+    ["Find the claim", "We monitor papers, proofs, research announcements, and credible reporting for meaningful AI-assisted results."],
+    ["Trace the evidence", "We locate the primary source and check what the AI contributed, what humans contributed, and whether the headline matches the result."],
+    ["Explain it for everyone", "We write two short summaries: what changed and why it matters outside the specialist field."],
+    ["Assign a status", "Verified records meet the standard. Under-review records have credible evidence with important checks still open."],
+    ["Keep the record current", "Corrections, stronger evidence, and status changes are added as the public record develops."],
+  ];
+
   return (
     <>
       <PageHero
         kicker="How it works"
-        title="A record earns its status."
-        deck="Automation can surface a lead. It cannot publish one. The public labels describe what the editorial desk has actually checked."
+        title="How a claim becomes part of the public record."
+        deck="AI discovery claims move quickly. We slow them down long enough to check the evidence, explain them clearly, and show what is known—and what is not."
       />
-      <section className="status-explainer">
+      <section className="method-steps" aria-label="Editorial process">
+        <ol>
+          {steps.map(([title, copy], index) => (
+            <li key={title}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h2>{title}</h2>
+                <p>{copy}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <section className="status-explainer status-legend">
         <article>
           <span className="status-dot candidate-dot" />
           <p className="section-kicker">Candidate · private</p>
           <h2>A lead, not a public claim</h2>
-          <p>
-            Scheduled source scans may create a private candidate. It stays off the site until an
-            editor confirms the source is relevant and writes the record.
-          </p>
+          <p>A source scan or editor has found a possible result. It does not appear publicly.</p>
         </article>
         <article>
           <span className="status-dot review-dot" />
           <p className="section-kicker amber">Under review · public</p>
-          <h2>Interesting, with open checks</h2>
-          <p>
-            Readers can inspect the primary source and see exactly what remains unresolved. This
-            lane never counts as part of the verified registry.
-          </p>
+          <h2>Credible, with open checks</h2>
+          <p>Readers can inspect the source and see exactly what remains unresolved.</p>
         </article>
         <article>
           <span className="status-dot verified-dot" />
           <p className="section-kicker">Verified record · public</p>
           <h2>Evidence recorded</h2>
-          <p>
-            An editor has confirmed the AI’s role, the result, the source, and the available
-            validation, then recorded a publication note.
-          </p>
+          <p>An editor has checked the AI’s role, result, source, validation, and limitations.</p>
         </article>
       </section>
       <section className="checklist">
@@ -378,6 +482,10 @@ function HowItWorksPage() {
           <li><strong>Limitations</strong><span>What still needs review, replication, or independent confirmation?</span></li>
         </ul>
       </section>
+      <p className="method-note">
+        Nothing enters the verified registry automatically. Every public status is an editorial
+        decision backed by cited evidence.
+      </p>
     </>
   );
 }
@@ -387,8 +495,8 @@ function ResearchersPage() {
     <>
       <PageHero
         kicker="For researchers"
-        title="Make the evidence easy to inspect."
-        deck="The strongest candidate records arrive with a primary source, a precise account of the AI system’s role, and a clear line between generated output and human validation."
+        title="Help make the evidence easy to inspect."
+        deck="A strong candidate record includes a primary source, a precise account of the AI system’s role, and a clear line between generated output and human validation."
       />
       <section className="researcher-grid">
         <article>
@@ -414,13 +522,14 @@ function ResearchersPage() {
       </section>
       <section className="researcher-note">
         <div>
-          <p className="section-kicker">Current intake</p>
-          <h2>Editorially sourced, by design</h2>
+          <p className="section-kicker">Submissions and corrections</p>
+          <h2>A public intake channel is next.</h2>
         </div>
         <p>
-          The desk currently finds leads in primary literature and institutional research
-          announcements. A public submission form will not open until it can preserve the same
-          evidence and review trail as the registry.
+          The desk currently sources records from primary literature and institutional research
+          announcements. A public submission and correction channel will open only when it can
+          preserve the same evidence trail as the registry. Until then, no automated submission
+          can become a public record.
         </p>
         <a className="text-link" href="/how-it-works">
           Read the editorial method <span aria-hidden="true">→</span>
@@ -431,42 +540,65 @@ function ResearchersPage() {
 }
 
 function NewsroomPage({ registry, state }) {
+  const updates = useMemo(
+    () =>
+      [...registry.verified, ...registry.underReview]
+        .map((discovery) => ({
+          ...discovery,
+          updateDate:
+            discovery.status === "verified"
+              ? discovery.publishedAt || discovery.verifiedAt || discovery.announcedAt
+              : discovery.reviewStartedAt || discovery.announcedAt,
+        }))
+        .sort((a, b) => String(b.updateDate).localeCompare(String(a.updateDate))),
+    [registry],
+  );
+
   return (
     <>
       <PageHero
         kicker="Newsroom"
-        title="What the editorial desk is tracking."
-        deck="New records appear here with their status visible. Under-review items are leads with open checks—not additions to the verified count."
+        title="The registry change log."
+        deck="A dated record of breakthroughs entering verification, moving under review, and joining the public registry."
       />
       <RegistryState state={state} />
       {state === "ready" && (
-        <>
-          <ReviewLane discoveries={registry.underReview} />
-          <section className="news-verified">
-            <div className="section-heading">
-              <div>
-                <p className="section-kicker">Recently verified</p>
-                <h2>Added to the registry</h2>
-              </div>
-              <a className="text-link" href="/#registry">
-                Open the full table <span aria-hidden="true">→</span>
-              </a>
+        <section className="news-verified">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Latest movements</p>
+              <h2>Changes to the public record</h2>
             </div>
-            <div className="news-list">
-              {registry.verified.slice(0, 4).map((discovery) => (
-                <article key={discovery.id}>
-                  <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
-                  <span>{discovery.field}</span>
+            <p>
+              Verified means the evidence checks were recorded. Under review means the claim is
+              credible enough to inspect publicly but is not part of the verified count.
+            </p>
+          </div>
+          <div className="news-list">
+            {updates.map((discovery) => (
+              <article key={discovery.id}>
+                <time dateTime={discovery.updateDate}>{formatDate(discovery.updateDate)}</time>
+                <span
+                  className={
+                    discovery.status === "verified"
+                      ? "news-status-verified"
+                      : "news-status-review"
+                  }
+                >
+                  {discovery.status === "verified" ? "Added to registry" : "Entered review"}
+                </span>
+                <div>
                   <h3>{discovery.title}</h3>
-                  <strong>{discovery.aiSystem}</strong>
-                  <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-                    Primary source <span aria-hidden="true">↗</span>
-                  </a>
-                </article>
-              ))}
-            </div>
-          </section>
-        </>
+                  <p>{discovery.whyItMatters}</p>
+                </div>
+                <strong>{discovery.aiSystem}</strong>
+                <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
+                  Primary source <span aria-hidden="true">↗</span>
+                </a>
+              </article>
+            ))}
+          </div>
+        </section>
       )}
     </>
   );
