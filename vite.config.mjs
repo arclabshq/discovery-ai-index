@@ -11,6 +11,12 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     allowedHosts: ["terminal.local"],
+    proxy: {
+      "/api": {
+        target: "https://discovery-index.alexreeder.chatgpt.site",
+        changeOrigin: true,
+      },
+    },
     warmup: {
       clientFiles: ["./src/main.jsx"],
     },

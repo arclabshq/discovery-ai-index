@@ -6,16 +6,15 @@ const STATUS_COPY = {
 };
 
 const NAV_ITEMS = [
-  { href: "/about", label: "About" },
-  { href: "/how-it-works", label: "How it works" },
-  { href: "/for-researchers", label: "For researchers" },
-  { href: "/newsroom", label: "Newsroom" },
+  { href: "/#registry", label: "Discoveries", match: "/" },
+  { href: "/how-it-works", label: "How we verify", match: "/how-it-works" },
+  { href: "/about", label: "About", match: "/about" },
 ];
 
 const PAGE_TITLES = {
   "/": "Discovery Index — See what AI is helping us discover",
   "/about": "About — Discovery Index",
-  "/how-it-works": "How it works — Discovery Index",
+  "/how-it-works": "How we verify — Discovery Index",
   "/for-researchers": "For researchers — Discovery Index",
   "/newsroom": "Newsroom — Discovery Index",
 };
@@ -68,54 +67,70 @@ function Header({ path }) {
         <span className="brand-mark" />
         Discovery Index
       </a>
-      <nav aria-label="Primary navigation">
+      <nav className="primary-nav" aria-label="Primary navigation">
         {NAV_ITEMS.map((item) => (
           <a
             href={item.href}
             key={item.href}
-            aria-current={path === item.href ? "page" : undefined}
+            aria-current={path === item.match ? "page" : undefined}
           >
             {item.label}
           </a>
         ))}
       </nav>
       <a className="explore" href="/#registry">
-        Explore discoveries
+        Latest discoveries
       </a>
     </header>
   );
 }
 
 function NewsTicker({ registry, state }) {
-  const items =
-    state === "ready"
-      ? registry.verified.map(
-          (discovery) =>
-            `${tickerField(discovery.field)} BREAKTHROUGH · ${tickerSystem(discovery)} · ${discovery.summary}`,
-        )
-      : [];
+  const items = useMemo(
+    () =>
+      state === "ready"
+        ? registry.verified.map((discovery) => ({
+            id: discovery.id,
+            href: `/#record-${discovery.slug}`,
+            label: `${tickerField(discovery.field)} · ${tickerSystem(discovery)} · ${discovery.title}`,
+          }))
+        : [],
+    [registry.verified, state],
+  );
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (items.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+    const interval = window.setInterval(
+      () => setActiveIndex((index) => (index + 1) % items.length),
+      6500,
+    );
+    return () => window.clearInterval(interval);
+  }, [items.length]);
+
+  useEffect(() => {
+    if (activeIndex >= items.length) setActiveIndex(0);
+  }, [activeIndex, items.length]);
+
+  const activeItem = items[activeIndex];
 
   return (
     <div
       className="ticker"
       aria-label={
-        items.length ? `Verified breakthroughs. ${items.join(". ")}` : "Loading breakthroughs"
+        items.length
+          ? `Verified breakthroughs. ${items.map((item) => item.label).join(". ")}`
+          : "Loading breakthroughs"
       }
     >
       <strong>BREAKTHROUGHS</strong>
-      <div className="ticker-window">
-        {items.length ? (
-          <div className="ticker-track">
-            {[0, 1].map((copy) => (
-              <div className="ticker-group" aria-hidden={copy === 1} key={copy}>
-                {items.map((item) => (
-                  <span className="ticker-item" key={`${copy}-${item}`}>
-                    {item}
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+      <div className="ticker-window" aria-live="off">
+        {activeItem ? (
+          <a className="ticker-current" href={activeItem.href} key={activeItem.id}>
+            {activeItem.label}
+          </a>
         ) : (
           <span className="ticker-loading">Opening verified breakthroughs…</span>
         )}
@@ -167,13 +182,13 @@ function VerifiedTable({ discoveries }) {
             <th scope="col">Field</th>
             <th scope="col">Breakthrough</th>
             <th scope="col">Why this matters</th>
-            <th scope="col">AI used</th>
+            <th scope="col">How AI helped</th>
             <th scope="col">Evidence</th>
           </tr>
         </thead>
         <tbody>
           {discoveries.map((discovery) => (
-            <tr key={discovery.id}>
+            <tr id={`record-${discovery.slug}`} key={discovery.id}>
               <td className="record-date" data-label="Announced">
                 <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
               </td>
@@ -185,7 +200,11 @@ function VerifiedTable({ discoveries }) {
               <td className="record-summary" data-label="Why this matters">
                 {discovery.whyItMatters}
               </td>
-              <td className="record-system" data-label="AI used">
+              <td className="record-system" data-label="How AI helped">
+                <p>
+                  {discovery.aiRole ||
+                    "The original research documents how the system contributed to the result."}
+                </p>
                 <strong>{discovery.aiSystem}</strong>
               </td>
               <td className="record-evidence" data-label="Evidence">
@@ -198,6 +217,55 @@ function VerifiedTable({ discoveries }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function DiscoveryCard({ discovery, featured = false }) {
+  return (
+    <article
+      className={`discovery-card${featured ? " featured" : ""}`}
+      id={`record-${discovery.slug}`}
+    >
+      <header className="discovery-meta">
+        <span>{discovery.field}</span>
+        <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
+        <span className="status verified">{STATUS_COPY[discovery.status]}</span>
+      </header>
+      <div className="discovery-card-body">
+        <div className="discovery-result">
+          <p className="card-label">What was discovered</p>
+          <h3>{discovery.title}</h3>
+          <p>{discovery.summary}</p>
+        </div>
+        <div className="discovery-impact">
+          <p className="card-label">Why this matters</p>
+          <p>{discovery.whyItMatters}</p>
+        </div>
+      </div>
+      <footer className="discovery-support">
+        <div className="discovery-ai-role">
+          <p className="card-label">How AI helped</p>
+          <p>
+            {discovery.aiRole ||
+              "The original research documents how the system contributed to the result."}
+          </p>
+          <strong>{discovery.aiSystem}</strong>
+        </div>
+        <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
+          Read the original research <span aria-hidden="true">↗</span>
+        </a>
+      </footer>
+    </article>
+  );
+}
+
+function VerifiedCards({ discoveries }) {
+  return (
+    <div className="discovery-grid">
+      {discoveries.map((discovery, index) => (
+        <DiscoveryCard discovery={discovery} featured={index === 0} key={discovery.id} />
+      ))}
     </div>
   );
 }
@@ -216,6 +284,11 @@ function ReviewCard({ discovery }) {
         <div className="review-plain-language">
           <p><b>What was discovered</b>{discovery.summary}</p>
           <p><b>Why this matters</b>{discovery.whyItMatters}</p>
+          <p>
+            <b>How AI helped</b>
+            {discovery.aiRole ||
+              "The original research documents how the system contributed to the result."}
+          </p>
         </div>
       </div>
       <div className="review-evidence">
@@ -260,6 +333,7 @@ function ReviewLane({ discoveries, compact = false }) {
 
 function HomePage({ registry, state }) {
   const [field, setField] = useState("All fields");
+  const [view, setView] = useState("stories");
   const fields = useMemo(
     () => ["All fields", ...new Set(registry.verified.map((item) => item.field))],
     [registry.verified],
@@ -275,27 +349,52 @@ function HomePage({ registry, state }) {
   return (
     <>
       <section className="registry-intro">
-        <p className="section-kicker">AI + scientific discovery</p>
-        <h1>See what AI is helping us discover.</h1>
+        <p className="section-kicker">Verified AI-assisted breakthroughs</p>
+        <h1>Real discoveries AI helped make.</h1>
         <p>
-          Explore important discoveries in medicine, biology, mathematics, materials, and
+          Explore documented advances in medicine, biology, mathematics, materials, and
           computing—explained in plain English and linked to the original research.
         </p>
       </section>
 
       <section className="registry-toolbar" id="registry">
         <div>
-          <p className="section-kicker">The latest discoveries</p>
-          <h2>What was discovered—and why it matters.</h2>
+          <p className="section-kicker">Verified discoveries</p>
+          <h2>See what changed—and why it matters.</h2>
+          <p className="registry-deck">
+            Start with the result. Then see how AI helped and inspect the evidence yourself.
+          </p>
         </div>
-        <label>
-          Field
-          <select value={field} onChange={(event) => setField(event.target.value)}>
-            {fields.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </select>
-        </label>
+        <div className="registry-controls">
+          <div className="view-switch" role="group" aria-label="Discovery layout">
+            <button
+              aria-pressed={view === "stories"}
+              onClick={() => setView("stories")}
+              type="button"
+            >
+              Story view
+            </button>
+            <button
+              aria-pressed={view === "table"}
+              onClick={() => setView("table")}
+              type="button"
+            >
+              Table view
+            </button>
+          </div>
+          <label id="fields">
+            Field
+            <select value={field} onChange={(event) => setField(event.target.value)}>
+              {fields.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </select>
+          </label>
+          <details className="verification-key">
+            <summary>What “verified” means</summary>
+            <p>The primary evidence was checked, the result was bounded, and its limitations were recorded.</p>
+          </details>
+        </div>
       </section>
 
       <RegistryState state={state} />
@@ -303,7 +402,11 @@ function HomePage({ registry, state }) {
       {state === "ready" && (
         <>
           {filtered.length ? (
-            <VerifiedTable discoveries={filtered} />
+            view === "stories" ? (
+              <VerifiedCards discoveries={filtered} />
+            ) : (
+              <VerifiedTable discoveries={filtered} />
+            )
           ) : (
             <section className="registry-state">
               <p>No verified records match this field yet.</p>
@@ -378,19 +481,17 @@ function AboutPage() {
 
 function HowItWorksPage() {
   const steps = [
-    ["Find the claim", "We monitor papers, proofs, research announcements, and credible reporting for meaningful AI-assisted results."],
-    ["Trace the evidence", "We locate the primary source and check what the AI contributed, what humans contributed, and whether the headline matches the result."],
-    ["Explain it for everyone", "We write two short summaries: what changed and why it matters outside the specialist field."],
-    ["Assign a status", "Verified records meet the standard. Under-review records have credible evidence with important checks still open."],
-    ["Keep the record current", "Corrections, stronger evidence, and status changes are added as the public record develops."],
+    ["Trace the original evidence", "We start with the paper, proof, code, dataset, or institutional research report—not a social post or secondhand headline."],
+    ["Check what actually changed", "We confirm the new result, how AI contributed, how people tested it, and what limitations or open questions remain."],
+    ["Explain it plainly", "Every public record tells readers what was discovered, why the advancement matters, and where they can inspect the evidence."],
   ];
 
   return (
     <>
       <PageHero
-        kicker="How it works"
-        title="How a claim becomes part of the public record."
-        deck="AI discovery claims move quickly. We slow them down long enough to check the evidence, explain them clearly, and show what is known—and what is not."
+        kicker="How we verify"
+        title="How a breakthrough earns a verified status."
+        deck="A verified record is more than a promising headline. It has traceable evidence, a bounded claim, and a plain-English explanation of what the research advances."
       />
       <section className="method-steps" aria-label="Editorial process">
         <ol>
@@ -571,9 +672,17 @@ function NotFoundPage() {
 
 function Footer({ generatedAt }) {
   return (
-    <footer>
-      <span>Discovery Index</span>
-      <span>Built for curiosity. Edited for evidence.</span>
+    <footer className="site-footer">
+      <div className="footer-brand">
+        <span>Discovery Index</span>
+        <span>Real discoveries, explained clearly.</span>
+      </div>
+      <nav className="footer-links" aria-label="Footer navigation">
+        <a href="/for-researchers">For researchers</a>
+        <a href="/newsroom">Newsroom</a>
+        <a href="/how-it-works">How we verify</a>
+        <a href="/about">About</a>
+      </nav>
       <span>
         {generatedAt
           ? `Registry checked ${new Intl.DateTimeFormat("en-US", {

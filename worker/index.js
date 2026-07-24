@@ -14,6 +14,7 @@ const PUBLIC_FIELDS = `
   verification_note,
   evidence_level,
   why_it_matters,
+  ai_role_plain,
   review_started_at,
   published_at
 `;
@@ -70,6 +71,7 @@ function toPublicDiscovery(row) {
     verificationNote: row.verification_note,
     evidenceLevel: row.evidence_level,
     whyItMatters: row.why_it_matters,
+    aiRole: row.ai_role_plain,
     reviewStartedAt: row.review_started_at,
     publishedAt: row.published_at,
   };
@@ -194,7 +196,8 @@ async function handleEditorialApi(request, env, url) {
          source_label,
          source_type,
          verification_note,
-         why_it_matters
+         why_it_matters,
+         ai_role_plain
        FROM discoveries
        WHERE id = ?`,
     )
@@ -227,6 +230,10 @@ async function handleEditorialApi(request, env, url) {
         typeof payload.whyItMatters === "string"
           ? payload.whyItMatters.trim()
           : current.why_it_matters,
+      aiRole:
+        typeof payload.aiRole === "string"
+          ? payload.aiRole.trim()
+          : current.ai_role_plain,
       verificationNote: verificationNote || current.verification_note,
     };
 
@@ -241,13 +248,14 @@ async function handleEditorialApi(request, env, url) {
         "sourceLabel",
         "sourceType",
         "whyItMatters",
+        "aiRole",
         "verificationNote",
       ].every((key) => typeof payload[key] === "string" && payload[key].trim())
     ) {
       return privateJson(
         {
           error:
-            "Starting public review requires an editor-written title, summary, field, AI system, source label, source type, why-it-matters note, and verification note.",
+            "Starting public review requires an editor-written title, summary, field, AI system, AI-role explanation, source label, source type, why-it-matters note, and verification note.",
         },
         { status: 400 },
       );
@@ -273,6 +281,7 @@ async function handleEditorialApi(request, env, url) {
          source_type = ?,
          verification_note = ?,
          why_it_matters = ?,
+         ai_role_plain = ?,
          review_started_at = CASE
            WHEN ? = 'under_review' THEN COALESCE(review_started_at, ?)
            ELSE review_started_at
@@ -291,6 +300,7 @@ async function handleEditorialApi(request, env, url) {
       editorialRecord.sourceType,
       editorialRecord.verificationNote,
       editorialRecord.whyItMatters,
+      editorialRecord.aiRole,
       nextStatus,
       now,
       nextStatus,

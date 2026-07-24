@@ -89,6 +89,7 @@ test("public registry exposes verified and under-review records but not candidat
     summary: "Summary",
     field: "Science",
     ai_system: "System",
+    ai_role_plain: "The system proposed candidates that researchers checked.",
     announced_at: "2025-01-01",
     source_url: "https://example.test/source",
   };
@@ -110,6 +111,10 @@ test("public registry exposes verified and under-review records but not candidat
     false,
   );
   assert.equal(body.policy.publishing, "human_review_required");
+  assert.equal(
+    body.verified[0].aiRole,
+    "The system proposed candidates that researchers checked.",
+  );
 });
 
 test("public discovery endpoint rejects candidate access", async () => {
@@ -180,4 +185,5 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/.openai/drizzle/0002_production_registry.sql", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0004_plain_language_registry.sql", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0005_research_significance.sql", import.meta.url));
+  await access(new URL("../dist/.openai/drizzle/0006_reader_first_registry.sql", import.meta.url));
 });
