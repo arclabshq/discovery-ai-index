@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 ];
 
 const PAGE_TITLES = {
-  "/": "Discovery Index — Verified AI-assisted discoveries",
+  "/": "Discovery Index — The public record of AI-assisted discovery",
   "/about": "About — Discovery Index",
   "/how-it-works": "How it works — Discovery Index",
   "/for-researchers": "For researchers — Discovery Index",
@@ -27,6 +27,15 @@ const TICKER_FIELD_LABELS = {
   Biology: "BIOLOGY",
   Medicine: "HEALTHCARE",
   Biomedicine: "HEALTHCARE",
+};
+
+const TICKER_SYSTEM_LABELS = {
+  "disc-openai-unit-distance": "OPENAI",
+  "disc-funsearch": "GOOGLE DEEPMIND / FUNSEARCH",
+  "disc-gnome": "GOOGLE DEEPMIND / GNOME",
+  "disc-alphatensor": "GOOGLE DEEPMIND / ALPHATENSOR",
+  "disc-alphafold2": "GOOGLE DEEPMIND / ALPHAFOLD",
+  "disc-halicin": "MIT / DRUG DISCOVERY MODEL",
 };
 
 function formatDate(value) {
@@ -46,6 +55,10 @@ function normalizePath(pathname) {
 
 function tickerField(field) {
   return TICKER_FIELD_LABELS[field] || field.toUpperCase();
+}
+
+function tickerSystem(discovery) {
+  return TICKER_SYSTEM_LABELS[discovery.id] || discovery.aiSystem.toUpperCase();
 }
 
 function Header({ path }) {
@@ -78,7 +91,7 @@ function NewsTicker({ registry, state }) {
     state === "ready"
       ? registry.verified.map(
           (discovery) =>
-            `${tickerField(discovery.field)} BREAKTHROUGH · ${discovery.aiSystem.toUpperCase()} · ${discovery.summary}`,
+            `${tickerField(discovery.field)} BREAKTHROUGH · ${tickerSystem(discovery)} · ${discovery.summary}`,
         )
       : [];
 
