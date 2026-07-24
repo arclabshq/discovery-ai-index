@@ -17,19 +17,30 @@ function formatDate(value) {
 
 function DiscoveryRow({ discovery }) {
   return (
-    <article className="story">
-      <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
-      <div className="story-title">
+    <article className="story" role="row">
+      <time className="story-date" dateTime={discovery.announcedAt} role="cell">
+        <span className="mobile-label">Announced</span>
+        {formatDate(discovery.announcedAt)}
+      </time>
+      <div className="story-title" role="cell">
+        <span className="mobile-label">Discovery</span>
         <h3>{discovery.title}</h3>
-        <p>
-          {discovery.field} <i aria-hidden="true" /> {discovery.aiSystem}
-        </p>
+        <p>{discovery.field}</p>
       </div>
-      <span className="status verified">{STATUS_COPY[discovery.status]}</span>
-      <p className="why">{discovery.whyItMatters}</p>
-      <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-        Primary source <span aria-hidden="true">↗</span>
-      </a>
+      <div className="story-summary" role="cell">
+        <span className="mobile-label">Plain-language summary</span>
+        <p>{discovery.summary}</p>
+      </div>
+      <div className="story-system" role="cell">
+        <span className="mobile-label">AI system</span>
+        <strong>{discovery.aiSystem}</strong>
+      </div>
+      <div className="story-evidence" role="cell">
+        <span className="status verified">{STATUS_COPY[discovery.status]}</span>
+        <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
+          Primary source <span aria-hidden="true">↗</span>
+        </a>
+      </div>
     </article>
   );
 }
@@ -42,9 +53,11 @@ function ReviewCard({ discovery }) {
         <span className="status reviewing">Under review</span>
       </div>
       <div className="review-copy">
-        <p className="review-field">
-          {discovery.field} · {discovery.aiSystem}
-        </p>
+        <p className="review-field">{discovery.field}</p>
+        <div className="review-system">
+          <span>AI system</span>
+          <strong>{discovery.aiSystem}</strong>
+        </div>
         <h3>{discovery.title}</h3>
         <p>{discovery.summary}</p>
       </div>
@@ -101,8 +114,7 @@ export function App() {
         : registry.verified.filter((item) => item.field === field),
     [field, registry.verified],
   );
-  const featured = filtered[0];
-  const listed = filtered.slice(1);
+  const featured = registry.verified[0];
 
   return (
     <main className="page">
@@ -112,9 +124,10 @@ export function App() {
           Discovery Index
         </a>
         <nav aria-label="Primary navigation">
-          <a href="#method">Method</a>
-          <a href="#registry">Verified</a>
-          <a href="#review">Under review</a>
+          <a href="#about">About</a>
+          <a href="#method">How it works</a>
+          <a href="#researchers">For researchers</a>
+          <a href="#newsroom">Newsroom</a>
         </nav>
         <a className="explore" href="#registry">
           Explore discoveries
@@ -128,13 +141,20 @@ export function App() {
         <span>Primary sources · human editorial review · no automatic publishing</span>
       </div>
 
-      <section className="intro">
+      <section className="intro" id="about">
         <p className="eyebrow">A public record, not a hype feed</p>
         <h1>What did AI actually discover?</h1>
-        <p>
-          A carefully sourced index of discoveries made with artificial intelligence—and the
-          evidence that separates a result from a claim.
-        </p>
+        <div className="intro-lower">
+          <p>
+            A carefully sourced index of discoveries made with artificial intelligence—and the
+            evidence that separates a result from a claim.
+          </p>
+          <div className="hero-standard">
+            <span>Editorial standard</span>
+            <strong>Primary evidence before publication.</strong>
+            <a href="#method">See how records are verified <span aria-hidden="true">↓</span></a>
+          </div>
+        </div>
       </section>
 
       {state === "loading" && (
@@ -155,10 +175,36 @@ export function App() {
 
       {state === "ready" && (
         <>
-          <section className="registry-controls" id="registry" aria-label="Filter verified registry">
+          <section className="review-section" id="newsroom">
+            <div className="section-heading">
+              <div>
+                <p className="section-kicker amber">Editorial desk · not yet verified</p>
+                <h2>Under review now</h2>
+              </div>
+              <p>
+                These are reported results, not verified registry entries. They remain visibly
+                separate until an editor records the completed checks.
+              </p>
+            </div>
+            <div className="review-list">
+              {registry.underReview.map((discovery) => (
+                <ReviewCard discovery={discovery} key={discovery.id} />
+              ))}
+            </div>
+          </section>
+
+          <section
+            className="registry-controls"
+            id="researchers"
+            aria-label="Filter verified registry"
+          >
             <div>
               <p className="section-kicker">Verified registry</p>
-              <h2>Records with inspectable evidence</h2>
+              <h2 id="registry">Records built for inspection</h2>
+              <p className="registry-deck">
+                Every entry names the AI system, explains the result plainly, and links to the
+                original research.
+              </p>
             </div>
             <label>
               Field
@@ -180,12 +226,14 @@ export function App() {
                 <div className="feature-copy">
                   <div className="feature-meta">
                     <time dateTime={featured.announcedAt}>{formatDate(featured.announcedAt)}</time>
-                    <span>
-                      {featured.field} · {featured.aiSystem}
-                    </span>
+                    <span>{featured.field}</span>
                   </div>
                   <h2>{featured.title}</h2>
                   <p>{featured.summary}</p>
+                  <div className="feature-system">
+                    <span>AI system</span>
+                    <strong>{featured.aiSystem}</strong>
+                  </div>
                   <span className="status verified">Verified record</span>
                   <div className="evidence">
                     <b>Evidence</b>
@@ -197,10 +245,19 @@ export function App() {
                 </div>
               </article>
 
-              <section className="story-list" aria-label="Verified discovery registry">
-                {listed.map((discovery) => (
-                  <DiscoveryRow discovery={discovery} key={discovery.id} />
-                ))}
+              <section className="story-list" aria-label="Verified discovery registry" role="table">
+                <div className="story-head" role="row">
+                  <span role="columnheader">Announced</span>
+                  <span role="columnheader">Discovery</span>
+                  <span role="columnheader">Plain-language summary</span>
+                  <span role="columnheader">AI system</span>
+                  <span role="columnheader">Evidence</span>
+                </div>
+                <div role="rowgroup">
+                  {filtered.map((discovery) => (
+                    <DiscoveryRow discovery={discovery} key={discovery.id} />
+                  ))}
+                </div>
               </section>
             </>
           ) : (
@@ -208,24 +265,6 @@ export function App() {
               <p>No verified records match this field yet.</p>
             </section>
           )}
-
-          <section className="review-section" id="review">
-            <div className="section-heading">
-              <div>
-                <p className="section-kicker amber">Evidence still moving</p>
-                <h2>Under editorial review</h2>
-              </div>
-              <p>
-                These are reported results, not verified registry entries. We show what is known
-                and what still needs checking.
-              </p>
-            </div>
-            <div className="review-list">
-              {registry.underReview.map((discovery) => (
-                <ReviewCard discovery={discovery} key={discovery.id} />
-              ))}
-            </div>
-          </section>
 
           <section className="method" id="method">
             <div className="method-intro">
