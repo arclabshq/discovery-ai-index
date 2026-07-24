@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +8,7 @@ const dist = path.join(root, "dist");
 const index = path.join(dist, "client", "index.html");
 const worker = path.join(root, "worker", "index.js");
 const hosting = path.join(root, ".openai", "hosting.json");
+const migrations = path.join(root, "db", "migrations");
 
 for (const file of [index, worker, hosting]) {
   if (!existsSync(file)) throw new Error("Missing Sites build input: " + file);
@@ -18,4 +19,11 @@ mkdirSync(path.join(dist, ".openai"), { recursive: true });
 copyFileSync(worker, path.join(dist, "server", "index.js"));
 copyFileSync(hosting, path.join(dist, ".openai", "hosting.json"));
 
-console.log("Prepared Sites build: dist/server/index.js and dist/.openai/hosting.json");
+const drizzle = path.join(dist, ".openai", "drizzle");
+rmSync(drizzle, { force: true, recursive: true });
+mkdirSync(drizzle, { recursive: true });
+for (const migration of readdirSync(migrations).filter((file) => file.endsWith(".sql")).sort()) {
+  copyFileSync(path.join(migrations, migration), path.join(drizzle, migration));
+}
+
+console.log("Prepared Sites build with worker, hosting metadata, and D1 migrations");
