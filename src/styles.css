@@ -259,37 +259,11 @@ select:focus-visible {
 }
 
 .registry-controls {
-  width: min(490px, 42vw);
+  width: min(260px, 42vw);
   display: grid;
-  grid-template-columns: auto minmax(190px, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px 15px;
   align-items: end;
-}
-
-.view-switch {
-  display: inline-flex;
-  border: 1px solid #aeb9cb;
-  width: max-content;
-}
-
-.view-switch button {
-  border: 0;
-  border-right: 1px solid #aeb9cb;
-  padding: 11px 13px;
-  color: #46526a;
-  background: #fbfaf7;
-  font-size: 12px;
-  font-weight: 750;
-  cursor: pointer;
-}
-
-.view-switch button:last-child {
-  border-right: 0;
-}
-
-.view-switch button[aria-pressed="true"] {
-  color: #fff;
-  background: #1556bd;
 }
 
 .registry-toolbar select {
@@ -620,6 +594,31 @@ select:focus-visible {
 .news-list a:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.registry-table tr.row-verified .record-date,
+.registry-table tr.row-review .record-date {
+  padding-left: 13px;
+}
+
+.registry-table tr.row-verified .record-date {
+  box-shadow: inset 3px 0 #1556bd;
+}
+
+.registry-table tr.row-review td {
+  border-bottom-color: #edc3a5;
+  background: rgba(255, 240, 229, 0.35);
+}
+
+.registry-table tr.row-review .record-date {
+  box-shadow: inset 3px 0 #d76c2b;
+}
+
+.registry-table tr.row-review .record-date time,
+.registry-table tr.row-review .record-field,
+.registry-table tr.row-review .record-system strong,
+.registry-table tr.row-review .record-evidence a {
+  color: #b84a10 !important;
 }
 
 .review-section {
@@ -1401,8 +1400,16 @@ select:focus-visible {
     scroll-margin-top: 18px;
   }
 
+  .mobile-leaderboard li.leaderboard-review {
+    border-bottom-color: #e5a477;
+  }
+
   .leaderboard-row {
     background: rgba(255, 255, 255, 0.28);
+  }
+
+  .leaderboard-review .leaderboard-row {
+    background: #fffaf5;
   }
 
   .leaderboard-row summary {
@@ -1431,6 +1438,10 @@ select:focus-visible {
 
   .leaderboard-row[open] summary {
     background: #f2f5fa;
+  }
+
+  .leaderboard-review .leaderboard-row[open] summary {
+    background: #fff0e5;
   }
 
   .leaderboard-index {
@@ -1497,12 +1508,20 @@ select:focus-visible {
   .leaderboard-status {
     padding: 4px 6px;
     border-radius: 3px;
-    background: #e6effe;
-    color: #1556bd;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     font-size: 7px;
     font-weight: 850;
+  }
+
+  .leaderboard-status-verified {
+    background: #e6effe;
+    color: #1556bd;
+  }
+
+  .leaderboard-status-review {
+    background: #fff0e5;
+    color: #b84a10;
   }
 
   .leaderboard-action {
@@ -1560,6 +1579,19 @@ select:focus-visible {
   .leaderboard-detail a:hover {
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+
+  .leaderboard-review .leaderboard-index,
+  .leaderboard-review .leaderboard-meta span,
+  .leaderboard-review .leaderboard-footer strong,
+  .leaderboard-review .leaderboard-action,
+  .leaderboard-review .leaderboard-detail a {
+    color: #b84a10;
+  }
+
+  .leaderboard-review .leaderboard-detail {
+    border-top-color: #edc3a5;
+    background: #fffaf5;
   }
 
   .discovery-grid {

@@ -178,11 +178,13 @@ function RegistryState({ state }) {
   return null;
 }
 
-function VerifiedTable({ discoveries }) {
+function RegistryTable({ discoveries }) {
   return (
     <div className="table-scroll">
       <table className="registry-table">
-        <caption className="sr-only">Verified research breakthroughs involving AI</caption>
+        <caption className="sr-only">
+          AI-assisted research breakthroughs by verification status
+        </caption>
         <colgroup>
           <col className="col-date" />
           <col className="col-field" />
@@ -202,85 +204,48 @@ function VerifiedTable({ discoveries }) {
           </tr>
         </thead>
         <tbody>
-          {discoveries.map((discovery) => (
-            <tr id={`record-${discovery.slug}`} key={discovery.id}>
-              <td className="record-date" data-label="Announced">
-                <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
-              </td>
-              <td className="record-field" data-label="Field">{discovery.field}</td>
-              <td className="record-title" data-label="What was discovered">
-                <h3>{discovery.title}</h3>
-                <p>{discovery.summary}</p>
-              </td>
-              <td className="record-summary" data-label="Why this matters">
-                {discovery.whyItMatters}
-              </td>
-              <td className="record-system" data-label="How AI helped">
-                <p>
-                  {discovery.aiRole ||
-                    "The original research documents how the system contributed to the result."}
-                </p>
-                <strong>{discovery.aiSystem}</strong>
-              </td>
-              <td className="record-evidence" data-label="Evidence">
-                <span className="status verified">{STATUS_COPY[discovery.status]}</span>
-                <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-                  Original research <span aria-hidden="true">↗</span>
-                </a>
-              </td>
-            </tr>
-          ))}
+          {discoveries.map((discovery) => {
+            const isVerified = discovery.status === "verified";
+
+            return (
+              <tr
+                className={isVerified ? "row-verified" : "row-review"}
+                id={`record-${discovery.slug}`}
+                key={discovery.id}
+              >
+                <td className="record-date" data-label="Announced">
+                  <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
+                </td>
+                <td className="record-field" data-label="Field">
+                  {discovery.field}
+                </td>
+                <td className="record-title" data-label="What was discovered">
+                  <h3>{discovery.title}</h3>
+                  <p>{discovery.summary}</p>
+                </td>
+                <td className="record-summary" data-label="Why this matters">
+                  {discovery.whyItMatters}
+                </td>
+                <td className="record-system" data-label="How AI helped">
+                  <p>
+                    {discovery.aiRole ||
+                      "The original research documents how the system contributed to the result."}
+                  </p>
+                  <strong>{discovery.aiSystem}</strong>
+                </td>
+                <td className="record-evidence" data-label="Evidence">
+                  <span className={`status ${isVerified ? "verified" : "reviewing"}`}>
+                    {STATUS_COPY[discovery.status]}
+                  </span>
+                  <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
+                    Original research <span aria-hidden="true">↗</span>
+                  </a>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-function DiscoveryCard({ discovery, featured = false }) {
-  return (
-    <article
-      className={`discovery-card${featured ? " featured" : ""}`}
-      id={`record-${discovery.slug}`}
-    >
-      <header className="discovery-meta">
-        <span>{discovery.field}</span>
-        <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
-        <span className="status verified">{STATUS_COPY[discovery.status]}</span>
-      </header>
-      <div className="discovery-card-body">
-        <div className="discovery-result">
-          <p className="card-label">What was discovered</p>
-          <h3>{discovery.title}</h3>
-          <p>{discovery.summary}</p>
-        </div>
-        <div className="discovery-impact">
-          <p className="card-label">Why this matters</p>
-          <p>{discovery.whyItMatters}</p>
-        </div>
-      </div>
-      <footer className="discovery-support">
-        <div className="discovery-ai-role">
-          <p className="card-label">How AI helped</p>
-          <p>
-            {discovery.aiRole ||
-              "The original research documents how the system contributed to the result."}
-          </p>
-          <strong>{discovery.aiSystem}</strong>
-        </div>
-        <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-          Read the original research <span aria-hidden="true">↗</span>
-        </a>
-      </footer>
-    </article>
-  );
-}
-
-function VerifiedCards({ discoveries }) {
-  return (
-    <div className="discovery-grid">
-      {discoveries.map((discovery, index) => (
-        <DiscoveryCard discovery={discovery} featured={index === 0} key={discovery.id} />
-      ))}
     </div>
   );
 }
@@ -289,7 +254,7 @@ function MobileLeaderboard({ discoveries }) {
   return (
     <section className="mobile-leaderboard" aria-labelledby="mobile-leaderboard-title">
       <h2 className="sr-only" id="mobile-leaderboard-title">
-        Verified discoveries, newest first
+        Discoveries by verification status, newest first
       </h2>
       <p className="leaderboard-note">Newest first · Reference numbers, not rankings</p>
       <div className="leaderboard-header" aria-hidden="true">
@@ -298,137 +263,104 @@ function MobileLeaderboard({ discoveries }) {
         <span>Details</span>
       </div>
       <ol>
-        {discoveries.map((discovery, index) => (
-          <li id={`record-${discovery.slug}`} key={discovery.id}>
-            <details className="leaderboard-row">
-              <summary data-testid={`leaderboard-row-${discovery.slug}`}>
-                <span className="leaderboard-index" aria-hidden="true">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="leaderboard-content">
-                  <span className="leaderboard-meta">
-                    <span>{discovery.field}</span>
-                    <time dateTime={discovery.announcedAt}>
-                      {formatDate(discovery.announcedAt)}
-                    </time>
+        {discoveries.map((discovery, index) => {
+          const isVerified = discovery.status === "verified";
+
+          return (
+            <li
+              className={isVerified ? "leaderboard-verified" : "leaderboard-review"}
+              id={`record-${discovery.slug}`}
+              key={discovery.id}
+            >
+              <details className="leaderboard-row">
+                <summary data-testid={`leaderboard-row-${discovery.slug}`}>
+                  <span className="leaderboard-index" aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
                   </span>
-                  <span className="leaderboard-title">{discovery.title}</span>
-                  <span className="leaderboard-why">{discovery.whyItMatters}</span>
-                  <span className="leaderboard-footer">
-                    <strong>{discovery.aiSystem}</strong>
-                    <span className="leaderboard-status">Verified</span>
+                  <span className="leaderboard-content">
+                    <span className="leaderboard-meta">
+                      <span>{discovery.field}</span>
+                      <time dateTime={discovery.announcedAt}>
+                        {formatDate(discovery.announcedAt)}
+                      </time>
+                    </span>
+                    <span className="leaderboard-title">{discovery.title}</span>
+                    <span className="leaderboard-why">{discovery.whyItMatters}</span>
+                    <span className="leaderboard-footer">
+                      <strong>{discovery.aiSystem}</strong>
+                      <span
+                        className={`leaderboard-status ${
+                          isVerified ? "leaderboard-status-verified" : "leaderboard-status-review"
+                        }`}
+                      >
+                        {STATUS_COPY[discovery.status]}
+                      </span>
+                    </span>
                   </span>
-                </span>
-                <span className="leaderboard-action" aria-hidden="true">
-                  <span className="action-open">View</span>
-                  <span className="action-close">Close</span>
-                </span>
-              </summary>
-              <div className="leaderboard-detail">
-                <div>
-                  <h3>What was discovered</h3>
-                  <p>{discovery.summary}</p>
+                  <span className="leaderboard-action" aria-hidden="true">
+                    <span className="action-open">View</span>
+                    <span className="action-close">Close</span>
+                  </span>
+                </summary>
+                <div className="leaderboard-detail">
+                  <div>
+                    <h3>What was discovered</h3>
+                    <p>{discovery.summary}</p>
+                  </div>
+                  <div>
+                    <h3>How AI helped</h3>
+                    <p>
+                      {discovery.aiRole ||
+                        "The original research documents how the system contributed to the result."}
+                    </p>
+                  </div>
+                  {!isVerified && discovery.verificationNote && (
+                    <div>
+                      <h3>What still needs to be confirmed</h3>
+                      <p>{discovery.verificationNote}</p>
+                    </div>
+                  )}
+                  <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
+                    Read the original research <span aria-hidden="true">↗</span>
+                  </a>
                 </div>
-                <div>
-                  <h3>How AI helped</h3>
-                  <p>
-                    {discovery.aiRole ||
-                      "The original research documents how the system contributed to the result."}
-                  </p>
-                </div>
-                <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-                  Read the original research <span aria-hidden="true">↗</span>
-                </a>
-              </div>
-            </details>
-          </li>
-        ))}
+              </details>
+            </li>
+          );
+        })}
       </ol>
-    </section>
-  );
-}
-
-function ReviewCard({ discovery }) {
-  return (
-    <article className="review-card">
-      <div className="review-meta">
-        <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
-        <span className="status reviewing">Under review</span>
-      </div>
-      <div className="review-copy">
-        <p className="review-field">{discovery.field}</p>
-        <strong className="review-system">{discovery.aiSystem}</strong>
-        <h3>{discovery.title}</h3>
-        <div className="review-plain-language">
-          <p><b>What was discovered</b>{discovery.summary}</p>
-          <p><b>Why this matters</b>{discovery.whyItMatters}</p>
-          <p>
-            <b>How AI helped</b>
-            {discovery.aiRole ||
-              "The original research documents how the system contributed to the result."}
-          </p>
-        </div>
-      </div>
-      <div className="review-evidence">
-        <b>What still needs to be confirmed</b>
-        <p>{discovery.verificationNote}</p>
-        <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-          Read the original research <span aria-hidden="true">↗</span>
-        </a>
-      </div>
-    </article>
-  );
-}
-
-function ReviewLane({ discoveries, compact = false }) {
-  const visible = compact ? discoveries.slice(0, 2) : discoveries;
-
-  return (
-    <section className="review-section">
-      <div className="section-heading">
-        <div>
-          <p className="section-kicker amber">Promising findings · still being checked</p>
-          <h2>Under review</h2>
-        </div>
-        <p>
-          These findings could be important, but they have not yet met the evidence standard for
-          the verified list.
-        </p>
-      </div>
-      <div className="review-list">
-        {visible.map((discovery) => (
-          <ReviewCard discovery={discovery} key={discovery.id} />
-        ))}
-      </div>
-      {compact && discoveries.length > visible.length && (
-        <a className="text-link review-more" href="/newsroom">
-          See every record under review <span aria-hidden="true">→</span>
-        </a>
-      )}
     </section>
   );
 }
 
 function HomePage({ registry, state }) {
   const [field, setField] = useState("All fields");
-  const [view, setView] = useState("stories");
   const isMobile = useMediaQuery("(max-width: 760px)");
+  const discoveries = useMemo(
+    () =>
+      [...registry.verified, ...registry.underReview].sort((a, b) =>
+        (b.announcedAt || "").localeCompare(a.announcedAt || ""),
+      ),
+    [registry.underReview, registry.verified],
+  );
   const fields = useMemo(
-    () => ["All fields", ...new Set(registry.verified.map((item) => item.field))],
-    [registry.verified],
+    () => ["All fields", ...new Set(discoveries.map((item) => item.field))],
+    [discoveries],
   );
   const filtered = useMemo(
     () =>
       field === "All fields"
-        ? registry.verified
-        : registry.verified.filter((item) => item.field === field),
-    [field, registry.verified],
+        ? discoveries
+        : discoveries.filter((item) => item.field === field),
+    [discoveries, field],
   );
+  const visibleVerified = filtered.filter((item) => item.status === "verified").length;
+  const visibleUnderReview = filtered.length - visibleVerified;
 
   return (
     <>
       <section className="registry-intro">
-        <p className="section-kicker">Verified AI-assisted breakthroughs</p>
+        <p className="section-kicker">AI-assisted breakthroughs</p>
         <h1>Real discoveries AI helped make.</h1>
         <p>
           Explore documented advances in medicine, biology, mathematics, materials, and
@@ -438,29 +370,13 @@ function HomePage({ registry, state }) {
 
       <section className="registry-toolbar" id="registry">
         <div>
-          <p className="section-kicker">Verified discoveries</p>
+          <p className="section-kicker">Discovery registry</p>
           <h2>See what changed—and why it matters.</h2>
           <p className="registry-deck">
-            Start with the result. Then see how AI helped and inspect the evidence yourself.
+            Verified records are blue. Findings still undergoing editorial checks are orange.
           </p>
         </div>
         <div className="registry-controls">
-          <div className="view-switch" role="group" aria-label="Discovery layout">
-            <button
-              aria-pressed={view === "stories"}
-              onClick={() => setView("stories")}
-              type="button"
-            >
-              Story view
-            </button>
-            <button
-              aria-pressed={view === "table"}
-              onClick={() => setView("table")}
-              type="button"
-            >
-              Table view
-            </button>
-          </div>
           <label id="fields">
             Field
             <select value={field} onChange={(event) => setField(event.target.value)}>
@@ -470,8 +386,11 @@ function HomePage({ registry, state }) {
             </select>
           </label>
           <details className="verification-key">
-            <summary>What “verified” means</summary>
-            <p>The primary evidence was checked, the result was bounded, and its limitations were recorded.</p>
+            <summary>How status works</summary>
+            <p>
+              Blue records have completed primary-evidence checks. Orange records are promising
+              findings with editorial checks still open.
+            </p>
           </details>
         </div>
       </section>
@@ -481,22 +400,20 @@ function HomePage({ registry, state }) {
       {state === "ready" && (
         <>
           <p className="sr-only" aria-live="polite">
-            {filtered.length} verified {filtered.length === 1 ? "discovery" : "discoveries"} shown.
+            {filtered.length} {filtered.length === 1 ? "discovery" : "discoveries"} shown:
+            {" "}{visibleVerified} verified and {visibleUnderReview} under review.
           </p>
           {filtered.length ? (
             isMobile ? (
               <MobileLeaderboard discoveries={filtered} />
-            ) : view === "stories" ? (
-              <VerifiedCards discoveries={filtered} />
             ) : (
-              <VerifiedTable discoveries={filtered} />
+              <RegistryTable discoveries={filtered} />
             )
           ) : (
             <section className="registry-state">
-              <p>No verified records match this field yet.</p>
+              <p>No records match this field yet.</p>
             </section>
           )}
-          <ReviewLane discoveries={registry.underReview} compact />
         </>
       )}
     </>
