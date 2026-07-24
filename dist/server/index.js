@@ -576,8 +576,22 @@ async function fetchHandler(request, env) {
     }
   }
 
-  const response = await env.ASSETS.fetch(request);
   const acceptsHtml = request.headers.get("accept")?.includes("text/html");
+  const isAppNavigation =
+    acceptsHtml &&
+    ["GET", "HEAD"].includes(request.method) &&
+    !url.pathname.startsWith("/api/") &&
+    url.pathname !== "/" &&
+    url.pathname !== "/index.html";
+
+  if (isAppNavigation) {
+    const indexUrl = new URL(request.url);
+    indexUrl.pathname = "/index.html";
+    indexUrl.search = "";
+    return env.ASSETS.fetch(new Request(indexUrl, request));
+  }
+
+  const response = await env.ASSETS.fetch(request);
 
   if (response.status !== 404 || !acceptsHtml || !["GET", "HEAD"].includes(request.method)) {
     return response;
