@@ -179,4 +179,5 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/.openai/drizzle/0001_discovery_registry.sql", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0002_production_registry.sql", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0004_plain_language_registry.sql", import.meta.url));
+  await access(new URL("../dist/.openai/drizzle/0005_research_significance.sql", import.meta.url));
 });

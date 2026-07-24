@@ -16,4 +16,10 @@ matters,” and keep abstract-style technical language behind the evidence layer
 ticker contains verified breakthrough stories only—field, AI system or lab, and the
 plain-language result.
 
+Write the homepage for a visitor seeking concrete examples of research progress, not as an
+explanation of why Discovery Index exists. Put product rationale and verification mechanics on
+About and How it works. In every record, “Why this matters” describes the importance of the
+scientific, mathematical, medical, or technical breakthrough itself—not the significance of AI
+having contributed to it.
+
 Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts/prepare-sites-build.mjs`, and `tests/sites-worker.test.mjs` intact so the same local prototype can be handed to Sites. Before a Sites handoff, run `npm run build` and `npm run test:sites`; the build must leave `dist/client/index.html`, `dist/server/index.js`, and `dist/.openai/hosting.json`.

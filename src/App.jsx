@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 ];
 
 const PAGE_TITLES = {
-  "/": "Discovery Index — The public record of AI-assisted discovery",
+  "/": "Discovery Index — See what AI is helping us discover",
   "/about": "About — Discovery Index",
   "/how-it-works": "How it works — Discovery Index",
   "/for-researchers": "For researchers — Discovery Index",
@@ -152,7 +152,7 @@ function VerifiedTable({ discoveries }) {
   return (
     <div className="table-scroll">
       <table className="registry-table">
-        <caption className="sr-only">Verified AI-assisted discovery registry</caption>
+        <caption className="sr-only">Verified research breakthroughs involving AI</caption>
         <colgroup>
           <col className="col-date" />
           <col className="col-field" />
@@ -166,8 +166,8 @@ function VerifiedTable({ discoveries }) {
             <th scope="col">Announced</th>
             <th scope="col">Field</th>
             <th scope="col">Breakthrough</th>
-            <th scope="col">Why it matters</th>
-            <th scope="col">AI system</th>
+            <th scope="col">Why this matters</th>
+            <th scope="col">AI used</th>
             <th scope="col">Evidence</th>
           </tr>
         </thead>
@@ -178,20 +178,20 @@ function VerifiedTable({ discoveries }) {
                 <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
               </td>
               <td className="record-field" data-label="Field">{discovery.field}</td>
-              <td className="record-title" data-label="What changed">
+              <td className="record-title" data-label="What was discovered">
                 <h3>{discovery.title}</h3>
                 <p>{discovery.summary}</p>
               </td>
-              <td className="record-summary" data-label="Why it matters">
+              <td className="record-summary" data-label="Why this matters">
                 {discovery.whyItMatters}
               </td>
-              <td className="record-system" data-label="AI system">
+              <td className="record-system" data-label="AI used">
                 <strong>{discovery.aiSystem}</strong>
               </td>
               <td className="record-evidence" data-label="Evidence">
                 <span className="status verified">{STATUS_COPY[discovery.status]}</span>
                 <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-                  Primary source <span aria-hidden="true">↗</span>
+                  Original research <span aria-hidden="true">↗</span>
                 </a>
               </td>
             </tr>
@@ -214,15 +214,15 @@ function ReviewCard({ discovery }) {
         <strong className="review-system">{discovery.aiSystem}</strong>
         <h3>{discovery.title}</h3>
         <div className="review-plain-language">
-          <p><b>What changed</b>{discovery.summary}</p>
-          <p><b>Why it matters</b>{discovery.whyItMatters}</p>
+          <p><b>What was discovered</b>{discovery.summary}</p>
+          <p><b>Why this matters</b>{discovery.whyItMatters}</p>
         </div>
       </div>
       <div className="review-evidence">
-        <b>What remains open</b>
+        <b>What still needs to be confirmed</b>
         <p>{discovery.verificationNote}</p>
         <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-          Inspect the primary source <span aria-hidden="true">↗</span>
+          Read the original research <span aria-hidden="true">↗</span>
         </a>
       </div>
     </article>
@@ -236,12 +236,12 @@ function ReviewLane({ discoveries, compact = false }) {
     <section className="review-section">
       <div className="section-heading">
         <div>
-          <p className="section-kicker amber">Editorial desk · not yet verified</p>
+          <p className="section-kicker amber">Promising findings · still being checked</p>
           <h2>Under review</h2>
         </div>
         <p>
-          These are reported results, not verified registry entries. They remain separate until
-          an editor records the completed checks.
+          These findings could be important, but they have not yet met the evidence standard for
+          the verified list.
         </p>
       </div>
       <div className="review-list">
@@ -254,44 +254,6 @@ function ReviewLane({ discoveries, compact = false }) {
           See every record under review <span aria-hidden="true">→</span>
         </a>
       )}
-    </section>
-  );
-}
-
-function HomeMethod() {
-  const steps = [
-    ["Find the claim", "We monitor primary research and credible announcements for meaningful AI-assisted results."],
-    ["Trace the evidence", "We check what the AI contributed, what humans checked, and whether the headline matches the source."],
-    ["Explain it plainly", "Every record answers two questions: what changed, and why should anyone care?"],
-    ["Assign a status", "An editor records verified, under review, or rejected. Nothing publishes automatically."],
-  ];
-
-  return (
-    <section className="home-method" aria-labelledby="home-method-title">
-      <div className="home-method-heading">
-        <div>
-          <p className="section-kicker">How it works</p>
-          <h2 id="home-method-title">A claim has to earn its place in the public record.</h2>
-        </div>
-        <div>
-          <p>
-            AI discovery headlines move quickly. We slow them down long enough to check the
-            evidence, explain the result, and show what is known—and what is not.
-          </p>
-          <a className="text-link" href="/how-it-works">
-            Read the full editorial method <span aria-hidden="true">→</span>
-          </a>
-        </div>
-      </div>
-      <ol>
-        {steps.map(([title, copy], index) => (
-          <li key={title}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <h3>{title}</h3>
-            <p>{copy}</p>
-          </li>
-        ))}
-      </ol>
     </section>
   );
 }
@@ -313,37 +275,18 @@ function HomePage({ registry, state }) {
   return (
     <>
       <section className="registry-intro">
-        <p className="section-kicker">The public registry of AI-assisted discovery</p>
-        <h1>See what AI is helping us discover—and why it matters.</h1>
+        <p className="section-kicker">AI + scientific discovery</p>
+        <h1>See what AI is helping us discover.</h1>
         <p>
-          Discovery Index turns documented breakthroughs in math, science, medicine, and
-          computing into public proof points anyone can understand. See what changed, why it
-          matters beyond the lab, and the evidence behind every verified claim.
+          Explore important discoveries in medicine, biology, mathematics, materials, and
+          computing—explained in plain English and linked to the original research.
         </p>
-      </section>
-
-      <section className="purpose-grid" aria-label="Why this registry exists">
-        <article>
-          <span>01</span>
-          <h2>See the pace</h2>
-          <p>Follow verified discoveries over time—not benchmark scores or launch-day claims.</p>
-        </article>
-        <article>
-          <span>02</span>
-          <h2>Understand the significance</h2>
-          <p>Learn what each result could change in language written for curious non-specialists.</p>
-        </article>
-        <article>
-          <span>03</span>
-          <h2>Trace the proof</h2>
-          <p>Open the paper, proof, code, or research announcement behind every record.</p>
-        </article>
       </section>
 
       <section className="registry-toolbar" id="registry">
         <div>
-          <p className="section-kicker">Verified breakthroughs</p>
-          <h2>What changed. Why it matters. Where the proof lives.</h2>
+          <p className="section-kicker">The latest discoveries</p>
+          <h2>What was discovered—and why it matters.</h2>
         </div>
         <label>
           Field
@@ -369,7 +312,6 @@ function HomePage({ registry, state }) {
           <ReviewLane discoveries={registry.underReview} compact />
         </>
       )}
-      <HomeMethod />
     </>
   );
 }
