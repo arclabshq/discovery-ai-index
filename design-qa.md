@@ -1,46 +1,51 @@
-# Discovery Index design QA
+# Discovery Index mobile leaderboard design QA
 
 ## Findings
 
-- No P0, P1, or P2 visual or interaction issues remain.
-- The reader-first implementation intentionally simplifies the original navigation, replaces the meta-explanation section with the first verified record, and makes the discovery itself the dominant content.
+- No P0, P1, or P2 issues remain.
+- The compact mobile list is an intentional responsive change: desktop retains the editorial cards, while mobile uses a numbered, expandable index optimized for scanning.
 
 ## Source and implementation
 
-- Source feedback screenshot: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/source-feedback-mobile.png`
-- Implementation screenshot: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/reader-first-mobile-v2.png`
-- Focused record screenshot: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/reader-first-mobile-card.png`
-- Desktop implementation screenshot: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/reader-first-desktop.png`
-- Direct side-by-side comparison: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/reader-first-comparison.png`
+- Source visual truth: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-source-v9.png`
+- Final collapsed implementation: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-collapsed-v2.png`
+- Source card focus: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-source-card-focus.png`
+- Expanded implementation focus: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-expanded.png`
+- Full-view comparison: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-comparison.png`
+- Focused record comparison: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-focus-comparison.png`
+- Desktop preservation check: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-desktop-preserved.png`
 
-Both mobile source images are 390 × 844 pixels. Browser verification used a 390 × 844 CSS-pixel viewport at device pixel ratio 1; the desktop pass used 1440 × 1000.
+The source and implementation captures are both 390 × 844 pixels at a 390 × 844 CSS-pixel viewport and device pixel ratio 1. Comparison canvases are 700 × 700 pixels. The desktop check is 1440 × 1000.
 
-## Comparison
+## Required fidelity surfaces
 
-- Preserved: ivory-and-cobalt editorial identity, serif display typography, evidence-first tone, breakthrough ticker, and prominent field filtering.
-- Improved: shorter navigation, a single clear reader promise, first verified record visible in the initial mobile viewport, result-first story structure, and explicit separation of discovery significance from the AI contribution.
-- Intentional delta: the explanatory “See the pace / Understand the significance / Trace the proof” block is removed from the homepage because it explained the product instead of helping a visitor understand a discovery.
-- Focused region: the record view was checked independently to confirm the order “What was discovered → Why this matters → How AI helped → Evidence.”
+- **Fonts and typography:** The existing Georgia editorial hierarchy and sans-serif metadata remain intact. Mobile result titles are reduced to 19px so a row scans quickly without losing the publication character.
+- **Spacing and layout rhythm:** The hero, filter, verification key, and 625px registry start position are preserved. The former 234px first summary was tightened to 191px, allowing the model and significance to remain visible without recreating a full card.
+- **Colors and visual tokens:** Ivory, navy, cobalt, cool-gray borders, verified-blue status styling, and focus-ring tokens remain consistent with the existing site.
+- **Image quality and assets:** This component contains no new imagery. Existing brand treatment is unchanged, and no image or icon asset was replaced with a code-drawn substitute.
+- **Copy and content:** Every collapsed row shows field, date, result-first title, a shortened visible significance statement, AI system, and textual verification status. Expanded rows reveal the full discovery summary, AI contribution, and primary source.
 
-## Interaction and responsive checks
+## Interaction, accessibility, and responsive checks
 
-- Story view is the default and renders six verified cards without also rendering the table to assistive technology.
-- Table view conditionally replaces story view and preserves field filtering.
-- The Medicine filter returns one matching record; restoring All fields returns all six.
-- `/how-it-works` loads directly with the “How we verify” title and three verification steps.
-- `/about`, `/for-researchers`, and `/newsroom` remain direct-linkable production routes.
-- At 390 pixels wide, document width equals viewport width and the first record begins at 625 pixels, with no horizontal overflow.
-- At 1440 pixels wide, document width equals viewport width and the two-column story grid remains scan-friendly.
-- A fresh browser load rendered all six records and direct route checks completed without a visible runtime failure. Worker and API tests provide the automated error check for the packaged build.
+- Mobile renders one ordered list of six native `<details>` rows; desktop cards and the desktop table are not duplicated in the mobile accessibility tree.
+- Visible numbering is marked as reference position, not importance: “Newest first · Reference numbers, not rankings.”
+- The first row opens and closes with click, Enter, and Space. Focus remains on the native `<summary>`.
+- The Medicine filter returns one row for halicin; restoring All fields returns all six. A polite result-count message supports assistive technology.
+- Status is communicated with the text “Verified,” not color alone.
+- At 390px and 320px widths, document width equals viewport width with no horizontal overflow.
+- At 1440px, six editorial cards render and the mobile leaderboard is absent.
+- Expanded content keeps the source link outside the summary, avoiding nested interactive controls.
+- Browser console warning/error check after expansion returned no entries.
+- Build and all nine worker/API tests pass.
 
 ## Comparison history
 
-1. The first mobile implementation placed the first record below the initial viewport.
-2. The duplicate mobile section heading, deck, and view toggle were removed.
-3. The final mobile pass brought the first record to 625 pixels while retaining filtering, verification context, and evidence access.
+1. The first leaderboard pass preserved too much card density: its first collapsed summary measured 234px tall.
+2. Result title size, row gaps, padding, and the significance preview were tightened.
+3. The revised row measures 191px, keeps the complete interaction model, and passes the full and focused comparisons.
 
 ## Follow-up polish
 
-- Replace the temporary circular brand mark when a final identity asset exists.
+- VoiceOver’s exact phrasing should receive a manual device pass when the site has a broader accessibility testing cycle.
 
 final result: passed

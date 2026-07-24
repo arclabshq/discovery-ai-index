@@ -332,6 +332,10 @@ select:focus-visible {
   gap: 18px;
 }
 
+.mobile-leaderboard {
+  display: none;
+}
+
 .discovery-card {
   border: 1px solid #b9c6dc;
   border-top: 3px solid #1556bd;
@@ -1301,8 +1305,9 @@ select:focus-visible {
   .researcher-grid,
   .researcher-note,
   .news-verified,
-    .table-scroll,
+  .table-scroll,
   .discovery-grid,
+  .mobile-leaderboard,
   .review-section,
   .registry-state {
     margin-left: 20px;
@@ -1352,6 +1357,209 @@ select:focus-visible {
 
   .view-switch {
     display: none;
+  }
+
+  .mobile-leaderboard {
+    display: block;
+    border-top: 3px solid #1556bd;
+  }
+
+  .leaderboard-note {
+    margin: 0;
+    padding: 8px 11px;
+    border-bottom: 1px solid #d2d7df;
+    color: #5d687d;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .leaderboard-header {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 40px;
+    gap: 10px;
+    padding: 10px 11px;
+    border-bottom: 1px solid #aeb9ca;
+    color: #667087;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 8px;
+    font-weight: 850;
+  }
+
+  .leaderboard-header span:last-child {
+    text-align: right;
+  }
+
+  .mobile-leaderboard ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .mobile-leaderboard li {
+    border-bottom: 1px solid #b9c6dc;
+    scroll-margin-top: 18px;
+  }
+
+  .leaderboard-row {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .leaderboard-row summary {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 40px;
+    gap: 10px;
+    align-items: start;
+    min-height: 44px;
+    padding: 14px 11px 15px;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .leaderboard-row summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .leaderboard-row summary::marker {
+    content: "";
+  }
+
+  .leaderboard-row summary:focus-visible {
+    outline: 3px solid #6fa0ee;
+    outline-offset: -3px;
+  }
+
+  .leaderboard-row[open] summary {
+    background: #f2f5fa;
+  }
+
+  .leaderboard-index {
+    color: #1556bd;
+    font: 700 17px/1 Georgia, "Times New Roman", serif;
+  }
+
+  .leaderboard-content {
+    min-width: 0;
+    display: grid;
+    gap: 7px;
+  }
+
+  .leaderboard-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    color: #5d687d;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 8px;
+    font-weight: 850;
+  }
+
+  .leaderboard-meta span {
+    color: #1556bd;
+  }
+
+  .leaderboard-title {
+    color: #111b2d;
+    font: 600 19px/1.06 Georgia, "Times New Roman", serif;
+    letter-spacing: -0.3px;
+  }
+
+  .leaderboard-why {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #354156;
+    font-size: 12px;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .leaderboard-row[open] .leaderboard-why {
+    display: block;
+    overflow: visible;
+  }
+
+  .leaderboard-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 10px;
+  }
+
+  .leaderboard-footer strong {
+    color: #1556bd;
+    font-size: 11px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  .leaderboard-status {
+    padding: 4px 6px;
+    border-radius: 3px;
+    background: #e6effe;
+    color: #1556bd;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 7px;
+    font-weight: 850;
+  }
+
+  .leaderboard-action {
+    align-self: start;
+    color: #1556bd;
+    text-align: right;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 8px;
+    font-weight: 850;
+  }
+
+  .action-close {
+    display: none;
+  }
+
+  .leaderboard-row[open] .action-open {
+    display: none;
+  }
+
+  .leaderboard-row[open] .action-close {
+    display: inline;
+  }
+
+  .leaderboard-detail {
+    border-top: 1px solid #cbd4e2;
+    padding: 18px 53px 21px;
+    display: grid;
+    gap: 18px;
+    background: #f8f9fb;
+  }
+
+  .leaderboard-detail h3 {
+    margin: 0 0 6px;
+    color: #637087;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font: 850 8px/1.3 Arial, sans-serif;
+  }
+
+  .leaderboard-detail p {
+    margin: 0;
+    color: #354156;
+    font-size: 13px;
+    line-height: 1.52;
+  }
+
+  .leaderboard-detail a {
+    color: #1556bd;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .leaderboard-detail a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
 
   .discovery-grid {

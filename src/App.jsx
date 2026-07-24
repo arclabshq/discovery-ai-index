@@ -60,6 +60,21 @@ function tickerSystem(discovery) {
   return TICKER_SYSTEM_LABELS[discovery.id] || discovery.aiSystem.toUpperCase();
 }
 
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const updateMatch = (event) => setMatches(event.matches);
+
+    setMatches(media.matches);
+    media.addEventListener("change", updateMatch);
+    return () => media.removeEventListener("change", updateMatch);
+  }, [query]);
+
+  return matches;
+}
+
 function Header({ path }) {
   return (
     <header className="nav">
@@ -270,6 +285,69 @@ function VerifiedCards({ discoveries }) {
   );
 }
 
+function MobileLeaderboard({ discoveries }) {
+  return (
+    <section className="mobile-leaderboard" aria-labelledby="mobile-leaderboard-title">
+      <h2 className="sr-only" id="mobile-leaderboard-title">
+        Verified discoveries, newest first
+      </h2>
+      <p className="leaderboard-note">Newest first · Reference numbers, not rankings</p>
+      <div className="leaderboard-header" aria-hidden="true">
+        <span>No.</span>
+        <span>Breakthrough</span>
+        <span>Details</span>
+      </div>
+      <ol>
+        {discoveries.map((discovery, index) => (
+          <li id={`record-${discovery.slug}`} key={discovery.id}>
+            <details className="leaderboard-row">
+              <summary data-testid={`leaderboard-row-${discovery.slug}`}>
+                <span className="leaderboard-index" aria-hidden="true">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="leaderboard-content">
+                  <span className="leaderboard-meta">
+                    <span>{discovery.field}</span>
+                    <time dateTime={discovery.announcedAt}>
+                      {formatDate(discovery.announcedAt)}
+                    </time>
+                  </span>
+                  <span className="leaderboard-title">{discovery.title}</span>
+                  <span className="leaderboard-why">{discovery.whyItMatters}</span>
+                  <span className="leaderboard-footer">
+                    <strong>{discovery.aiSystem}</strong>
+                    <span className="leaderboard-status">Verified</span>
+                  </span>
+                </span>
+                <span className="leaderboard-action" aria-hidden="true">
+                  <span className="action-open">View</span>
+                  <span className="action-close">Close</span>
+                </span>
+              </summary>
+              <div className="leaderboard-detail">
+                <div>
+                  <h3>What was discovered</h3>
+                  <p>{discovery.summary}</p>
+                </div>
+                <div>
+                  <h3>How AI helped</h3>
+                  <p>
+                    {discovery.aiRole ||
+                      "The original research documents how the system contributed to the result."}
+                  </p>
+                </div>
+                <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
+                  Read the original research <span aria-hidden="true">↗</span>
+                </a>
+              </div>
+            </details>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function ReviewCard({ discovery }) {
   return (
     <article className="review-card">
@@ -334,6 +412,7 @@ function ReviewLane({ discoveries, compact = false }) {
 function HomePage({ registry, state }) {
   const [field, setField] = useState("All fields");
   const [view, setView] = useState("stories");
+  const isMobile = useMediaQuery("(max-width: 760px)");
   const fields = useMemo(
     () => ["All fields", ...new Set(registry.verified.map((item) => item.field))],
     [registry.verified],
@@ -401,8 +480,13 @@ function HomePage({ registry, state }) {
 
       {state === "ready" && (
         <>
+          <p className="sr-only" aria-live="polite">
+            {filtered.length} verified {filtered.length === 1 ? "discovery" : "discoveries"} shown.
+          </p>
           {filtered.length ? (
-            view === "stories" ? (
+            isMobile ? (
+              <MobileLeaderboard discoveries={filtered} />
+            ) : view === "stories" ? (
               <VerifiedCards discoveries={filtered} />
             ) : (
               <VerifiedTable discoveries={filtered} />
