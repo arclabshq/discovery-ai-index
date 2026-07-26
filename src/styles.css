@@ -884,7 +884,7 @@ select:focus-visible {
 
 .status-explainer.public-statuses {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-bottom: 24px;
+  margin-bottom: 80px;
 }
 
 .method-steps {
@@ -970,14 +970,18 @@ select:focus-visible {
 .method-intro-note {
   max-width: 1400px;
   margin: 0 auto 85px;
+  padding: 20px 24px;
+  border-left: 3px solid #1556bd;
+  background: #f2f5fa;
   color: #59657a;
   font-size: 14px;
+  font-weight: 700;
   line-height: 1.55;
 }
 
 .checklist {
   max-width: 1400px;
-  margin: 0 auto 100px;
+  margin: 0 auto 40px;
   display: grid;
   grid-template-columns: 0.65fr 1fr;
   gap: clamp(60px, 9vw, 140px);
@@ -1017,7 +1021,7 @@ select:focus-visible {
 
 .method-policies {
   max-width: 1400px;
-  margin: -35px auto 100px;
+  margin: 0 auto 100px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
@@ -1384,6 +1388,7 @@ select:focus-visible {
   .registry-status-bar {
     padding: 10px 20px 11px;
     align-items: flex-start;
+    flex-direction: column;
     gap: 7px;
   }
 
@@ -1396,6 +1401,8 @@ select:focus-visible {
   }
 
   .registry-status-content {
+    width: 100%;
+    min-width: 0;
     padding: 0;
     gap: 5px 14px;
     font-size: 12px;
@@ -1879,7 +1886,7 @@ select:focus-visible {
   }
 
   .method-policies {
-    margin-top: -35px;
+    margin-top: 0;
     margin-bottom: 70px;
     grid-template-columns: 1fr;
     gap: 32px;

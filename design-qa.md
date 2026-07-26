@@ -1,51 +1,57 @@
-# Discovery Index mobile leaderboard design QA
+# Discovery Index mobile hero and Method design QA
 
 ## Findings
 
-- No P0, P1, or P2 issues remain.
-- The compact mobile list is an intentional responsive change: desktop retains the editorial cards, while mobile uses a numbered, expandable index optimized for scanning.
+- No actionable P0, P1, or P2 issues remain.
+- The reported mobile status-strip overflow is resolved. The status content now stays within the viewport and the hero immediately follows it.
+- The Method page is intentionally simplified from process language to two status definitions and three evidence questions.
 
 ## Source and implementation
 
-- Source visual truth: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-source-v9.png`
-- Final collapsed implementation: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-collapsed-v2.png`
-- Source card focus: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-source-card-focus.png`
-- Expanded implementation focus: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-expanded.png`
-- Full-view comparison: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-comparison.png`
-- Focused record comparison: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-focus-comparison.png`
-- Desktop preservation check: `/Users/alexreeder/Documents/Codex/2026-07-23/realtime-voice-chat/outputs/discovery-index/qa/mobile-leaderboard-desktop-preserved.png`
+- Source visual truth: `/tmp/codex-remote-attachments/019f91fa-3dbe-7233-9033-49ce629ac516/BAD4CC45-B25D-479D-B035-7FFD4BBCF8A8/1-Photo-1.jpg`
+- Preserved source copy: `qa/mobile-source-bug.jpg`
+- Corrected homepage: `qa/mobile-home-fixed.png`
+- Simplified Method page: `qa/mobile-method-fixed.png`
+- Full-view comparison: `qa/mobile-hero-status-comparison.png`
 
-The source and implementation captures are both 390 × 844 pixels at a 390 × 844 CSS-pixel viewport and device pixel ratio 1. Comparison canvases are 700 × 700 pixels. The desktop check is 1440 × 1000.
+The reported screenshot is 589 × 1280 pixels and includes mobile Safari chrome. It was normalized to a 393px-wide comparison column. The implementation captures are 393 × 852 pixels at a 393 × 852 CSS-pixel viewport and device pixel ratio 1. The comparison judges the app-owned status strip, hero, copy, filter, and legend rather than browser chrome.
+
+State: registry ready with nine public records, six verified and three under review.
+
+## Full-view comparison evidence
+
+The combined comparison shows the reported status contents pushed beyond the right edge with a large blank region below. In the corrected capture, the same status information wraps into a compact 102px-high block, the hero begins immediately below it, and the document width equals the 393px viewport width.
+
+## Focused comparison evidence
+
+The homepage comparison is legible enough to inspect the affected status strip, hero, supporting copy, filter, and legend without another crop. The Method request was written rather than shown in the source image, so `qa/mobile-method-fixed.png` is the focused evidence: it shows the new two-status explanation and the beginning of the orange definition at the same mobile viewport.
 
 ## Required fidelity surfaces
 
-- **Fonts and typography:** The existing Georgia editorial hierarchy and sans-serif metadata remain intact. Mobile result titles are reduced to 19px so a row scans quickly without losing the publication character.
-- **Spacing and layout rhythm:** The hero, filter, verification key, and 625px registry start position are preserved. The former 234px first summary was tightened to 191px, allowing the model and significance to remain visible without recreating a full card.
-- **Colors and visual tokens:** Ivory, navy, cobalt, cool-gray borders, verified-blue status styling, and focus-ring tokens remain consistent with the existing site.
-- **Image quality and assets:** This component contains no new imagery. Existing brand treatment is unchanged, and no image or icon asset was replaced with a code-drawn substitute.
-- **Copy and content:** Every collapsed row shows field, date, result-first title, a shortened visible significance statement, AI system, and textual verification status. Expanded rows reveal the full discovery summary, AI contribution, and primary source.
+- **Fonts and typography:** Existing Georgia display typography and sans-serif metadata are preserved. The hero hierarchy and wrapping remain editorial and readable at 393px.
+- **Spacing and layout rhythm:** The status strip uses a true mobile column layout with a full-width content row. The hero starts at 223px with no unintended blank region. The Method page keeps deliberate editorial spacing between the explanation and status definitions.
+- **Colors and visual tokens:** Ivory, navy, cobalt, cool-gray rules, verified blue, and under-review orange remain unchanged and retain their semantic meaning.
+- **Image quality and assets:** No page image asset was missing; the reported failure was layout overflow in the hero-adjacent status strip. No image, logo, or icon was replaced.
+- **Copy and content:** The homepage now says what readers gain: what changed, why it matters, and where the evidence comes from. “Plain English” is removed. Method now defines orange and blue directly, then asks what changed, how AI helped, and how the result was checked.
 
 ## Interaction, accessibility, and responsive checks
 
-- Mobile renders one ordered list of six native `<details>` rows; desktop cards and the desktop table are not duplicated in the mobile accessibility tree.
-- Visible numbering is marked as reference position, not importance: “Newest first · Reference numbers, not rankings.”
-- The first row opens and closes with click, Enter, and Space. Focus remains on the native `<summary>`.
-- The Medicine filter returns one row for halicin; restoring All fields returns all six. A polite result-count message supports assistive technology.
-- Status is communicated with the text “Verified,” not color alone.
-- At 390px and 320px widths, document width equals viewport width with no horizontal overflow.
-- At 1440px, six editorial cards render and the mobile leaderboard is absent.
-- Expanded content keeps the source link outside the summary, avoiding nested interactive controls.
-- Browser console warning/error check after expansion returned no entries.
-- Build and all nine worker/API tests pass.
+- The document `scrollWidth` and `clientWidth` both measure 393px; there is no horizontal overflow.
+- The status strip computes to `flex-direction: column`, with its content measuring 353px inside the 393px viewport.
+- The Field control filters Mathematics to four records: two verified and two under review.
+- The primary Method navigation link opens the simplified Method page and exposes the expected heading.
+- Status is communicated with text as well as color.
+- Browser console error check returned no entries.
+- Build and all nine Worker/API tests pass.
 
 ## Comparison history
 
-1. The first leaderboard pass preserved too much card density: its first collapsed summary measured 234px tall.
-2. Result title size, row gaps, padding, and the significance preview were tightened.
-3. The revised row measures 191px, keeps the complete interaction model, and passes the full and focused comparisons.
+1. Reported state: the mobile status strip remained a single desktop flex row. Its label consumed the row width and pushed the status content off-screen, producing a large blank block before the hero.
+2. Fix: the mobile status strip now stacks vertically, and the content receives an explicit full width and zero minimum width.
+3. Post-fix evidence: `qa/mobile-hero-status-comparison.png` shows the status content in bounds, the blank block removed, and the hero restored above the fold. Browser measurements confirm zero horizontal overflow.
 
 ## Follow-up polish
 
-- VoiceOver’s exact phrasing should receive a manual device pass when the site has a broader accessibility testing cycle.
+- A physical iPhone Safari pass can confirm safe-area and browser-toolbar behavior, although the responsive layout itself now fits the target width.
 
 final result: passed

@@ -128,12 +128,12 @@ function StatusLegend() {
       <span>
         <i className="legend-dot verified-dot" aria-hidden="true" />
         <b>Verified</b>
-        <em>Primary-evidence checks complete</em>
+        <em>Review complete</em>
       </span>
       <span>
         <i className="legend-dot review-dot" aria-hidden="true" />
         <b>Under review</b>
-        <em>Editorial checks still open</em>
+        <em>Checks still open</em>
       </span>
     </div>
   );
@@ -349,7 +349,7 @@ function HomePage({ registry, state }) {
         <h1>Real discoveries AI helped make.</h1>
         <p>
           Explore documented advances in medicine, biology, mathematics, materials, and
-          computing—explained in plain English and linked to the original research.
+          computing—and see what changed, why it matters, and where the evidence comes from.
         </p>
       </section>
 
@@ -473,39 +473,43 @@ function HowItWorksPage() {
     <>
       <PageHero
         kicker="Method"
-        title="How records are reviewed."
-        deck="Each public record is reviewed manually against primary evidence. The status tells you whether those checks are complete or still open."
+        title="Two statuses. One evidence trail."
+        deck="Orange means our review is still open. Blue means the review is complete. Every public record links to the original research."
       />
       <section className="status-explainer status-legend public-statuses">
         <article>
           <span className="status-dot review-dot" />
           <p className="section-kicker amber">Orange · under review</p>
-          <h2>Editorial checks are still open</h2>
-          <p>The primary source is public, but the record has not completed every check.</p>
+          <h2>Source linked. Checks open.</h2>
+          <p>
+            The result is visible, but we are still checking what is new, how AI contributed, or
+            how the result was validated.
+          </p>
         </article>
         <article>
           <span className="status-dot verified-dot" />
           <p className="section-kicker">Blue · verified</p>
-          <h2>Primary-evidence checks are complete</h2>
-          <p>The AI’s role, result, source, validation, and limitations have been recorded.</p>
+          <h2>Review complete.</h2>
+          <p>
+            The record states what changed, how AI contributed, how the result was checked, and
+            what limitations remain.
+          </p>
         </article>
       </section>
-      <p className="method-intro-note">
-        Automated scans may create private candidates, but they never publish records or change a
-        public status.
-      </p>
       <section className="checklist">
         <div>
-          <p className="section-kicker">Editorial checks</p>
-          <h2>What gets examined</h2>
+          <p className="section-kicker">For every record</p>
+          <h2>We answer three questions.</h2>
         </div>
         <ul>
-          <li><strong>Novelty</strong><span>Is the result actually new, and is that claim bounded?</span></li>
-          <li><strong>AI’s role</strong><span>Did the system generate, search, predict, or only summarize?</span></li>
-          <li><strong>Validation</strong><span>Was the output formally checked, benchmarked, or tested experimentally?</span></li>
-          <li><strong>Limitations</strong><span>What still needs review, replication, or independent confirmation?</span></li>
+          <li><strong>What changed?</strong><span>The specific result the researchers report.</span></li>
+          <li><strong>How did AI help?</strong><span>The system’s material role in producing the result.</span></li>
+          <li><strong>How was it checked?</strong><span>The proof, experiment, benchmark, or expert review behind it.</span></li>
         </ul>
       </section>
+      <p className="method-intro-note">
+        No scan, model, or submission can publish a record or change its status automatically.
+      </p>
       <section className="method-policies">
         <article>
           <p className="section-kicker">Update cadence</p>
