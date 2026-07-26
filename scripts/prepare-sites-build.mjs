@@ -9,7 +9,7 @@ const index = path.join(dist, "client", "index.html");
 const worker = path.join(root, "worker", "index.js");
 const hosting = path.join(root, ".openai", "hosting.json");
 const migrations = path.join(root, "db", "migrations");
-const appRoutes = ["about", "how-it-works", "for-researchers", "newsroom"];
+const appRoutes = ["about", "method", "how-it-works"];
 
 for (const file of [index, worker, hosting]) {
   if (!existsSync(file)) throw new Error("Missing Sites build input: " + file);

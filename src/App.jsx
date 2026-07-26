@@ -7,34 +7,15 @@ const STATUS_COPY = {
 
 const NAV_ITEMS = [
   { href: "/#registry", label: "Discoveries", match: "/" },
-  { href: "/how-it-works", label: "How we verify", match: "/how-it-works" },
+  { href: "/method", label: "Method", match: "/method" },
   { href: "/about", label: "About", match: "/about" },
 ];
 
 const PAGE_TITLES = {
   "/": "Discovery Index — See what AI is helping us discover",
   "/about": "About — Discovery Index",
-  "/how-it-works": "How we verify — Discovery Index",
-  "/for-researchers": "For researchers — Discovery Index",
-  "/newsroom": "Newsroom — Discovery Index",
-};
-
-const TICKER_FIELD_LABELS = {
-  Mathematics: "MATH",
-  "Computer science": "COMPUTING",
-  "Materials science": "MATERIALS",
-  Biology: "BIOLOGY",
-  Medicine: "HEALTHCARE",
-  Biomedicine: "HEALTHCARE",
-};
-
-const TICKER_SYSTEM_LABELS = {
-  "disc-openai-unit-distance": "OPENAI",
-  "disc-funsearch": "GOOGLE DEEPMIND / FUNSEARCH",
-  "disc-gnome": "GOOGLE DEEPMIND / GNOME",
-  "disc-alphatensor": "GOOGLE DEEPMIND / ALPHATENSOR",
-  "disc-alphafold2": "GOOGLE DEEPMIND / ALPHAFOLD",
-  "disc-halicin": "MIT / DRUG DISCOVERY MODEL",
+  "/method": "Method — Discovery Index",
+  "/how-it-works": "Method — Discovery Index",
 };
 
 function formatDate(value) {
@@ -47,17 +28,22 @@ function formatDate(value) {
   }).format(new Date(`${value}T00:00:00Z`));
 }
 
+function formatDateTime(value) {
+  if (!value) return "Update time pending";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/New_York",
+    timeZoneName: "short",
+  }).format(new Date(value));
+}
+
 function normalizePath(pathname) {
   if (pathname === "/") return pathname;
   return pathname.replace(/\/+$/, "");
-}
-
-function tickerField(field) {
-  return TICKER_FIELD_LABELS[field] || field.toUpperCase();
-}
-
-function tickerSystem(discovery) {
-  return TICKER_SYSTEM_LABELS[discovery.id] || discovery.aiSystem.toUpperCase();
 }
 
 function useMediaQuery(query) {
@@ -93,63 +79,62 @@ function Header({ path }) {
           </a>
         ))}
       </nav>
-      <a className="explore" href="/#registry">
-        Latest discoveries
-      </a>
     </header>
   );
 }
 
-function NewsTicker({ registry, state }) {
-  const items = useMemo(
-    () =>
-      state === "ready"
-        ? registry.verified.map((discovery) => ({
-            id: discovery.id,
-            href: `/#record-${discovery.slug}`,
-            label: `${tickerField(discovery.field)} · ${tickerSystem(discovery)} · ${discovery.title}`,
-          }))
-        : [],
-    [registry.verified, state],
-  );
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    if (items.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return undefined;
-    }
-    const interval = window.setInterval(
-      () => setActiveIndex((index) => (index + 1) % items.length),
-      6500,
-    );
-    return () => window.clearInterval(interval);
-  }, [items.length]);
-
-  useEffect(() => {
-    if (activeIndex >= items.length) setActiveIndex(0);
-  }, [activeIndex, items.length]);
-
-  const activeItem = items[activeIndex];
+function RegistryStatusBar({ registry, state }) {
+  const verifiedCount = registry.verified.length;
+  const reviewCount = registry.underReview.length;
+  const totalCount = verifiedCount + reviewCount;
 
   return (
-    <div
-      className="ticker"
-      aria-label={
-        items.length
-          ? `Verified breakthroughs. ${items.map((item) => item.label).join(". ")}`
-          : "Loading breakthroughs"
-      }
-    >
-      <strong>BREAKTHROUGHS</strong>
-      <div className="ticker-window" aria-live="off">
-        {activeItem ? (
-          <a className="ticker-current" href={activeItem.href} key={activeItem.id}>
-            {activeItem.label}
-          </a>
+    <section className="registry-status-bar" aria-label="Registry status" aria-live="polite">
+      <strong>REGISTRY</strong>
+      <div className="registry-status-content">
+        {state === "ready" ? (
+          <>
+            <span><b>{totalCount}</b> public records</span>
+            <span className="status-count">
+              <i className="status-count-dot verified-dot" aria-hidden="true" />
+              <b>{verifiedCount}</b> verified
+            </span>
+            <span className="status-count">
+              <i className="status-count-dot review-dot" aria-hidden="true" />
+              <b>{reviewCount}</b> under review
+            </span>
+            <span className="status-updated">
+              <time dateTime={registry.lastEditorialUpdateAt || undefined}>
+                Last editorial update {formatDateTime(registry.lastEditorialUpdateAt)}
+              </time>
+            </span>
+            <span>Reviewed weekly</span>
+          </>
         ) : (
-          <span className="ticker-loading">Opening verified breakthroughs…</span>
+          <span>
+            {state === "error"
+              ? "Registry status temporarily unavailable"
+              : "Opening durable registry…"}
+          </span>
         )}
       </div>
+    </section>
+  );
+}
+
+function StatusLegend() {
+  return (
+    <div className="status-legend-inline" aria-label="Verification status legend">
+      <span>
+        <i className="legend-dot verified-dot" aria-hidden="true" />
+        <b>Verified</b>
+        <em>Primary-evidence checks complete</em>
+      </span>
+      <span>
+        <i className="legend-dot review-dot" aria-hidden="true" />
+        <b>Under review</b>
+        <em>Editorial checks still open</em>
+      </span>
     </div>
   );
 }
@@ -372,9 +357,7 @@ function HomePage({ registry, state }) {
         <div>
           <p className="section-kicker">Discovery registry</p>
           <h2>See what changed—and why it matters.</h2>
-          <p className="registry-deck">
-            Verified records are blue. Findings still undergoing editorial checks are orange.
-          </p>
+          <p className="registry-deck">Every record links to the original research.</p>
         </div>
         <div className="registry-controls">
           <label id="fields">
@@ -385,16 +368,10 @@ function HomePage({ registry, state }) {
               ))}
             </select>
           </label>
-          <details className="verification-key">
-            <summary>How status works</summary>
-            <p>
-              Blue records have completed primary-evidence checks. Orange records are promising
-              findings with editorial checks still open.
-            </p>
-          </details>
         </div>
       </section>
 
+      <StatusLegend />
       <RegistryState state={state} />
 
       {state === "ready" && (
@@ -476,57 +453,47 @@ function AboutPage() {
           </dl>
         </aside>
       </section>
+      <section className="independence-note">
+        <div>
+          <p className="section-kicker">Independent project</p>
+          <h2>Maintained by one editor.</h2>
+        </div>
+        <p>
+          Discovery Index is independently maintained and is not affiliated with the researchers
+          or organizations listed. Records are reviewed manually and corrected as stronger
+          evidence appears.
+        </p>
+      </section>
     </>
   );
 }
 
 function HowItWorksPage() {
-  const steps = [
-    ["Trace the original evidence", "We start with the paper, proof, code, dataset, or institutional research report—not a social post or secondhand headline."],
-    ["Check what actually changed", "We confirm the new result, how AI contributed, how people tested it, and what limitations or open questions remain."],
-    ["Explain it plainly", "Every public record tells readers what was discovered, why the advancement matters, and where they can inspect the evidence."],
-  ];
-
   return (
     <>
       <PageHero
-        kicker="How we verify"
-        title="How a breakthrough earns a verified status."
-        deck="A verified record is more than a promising headline. It has traceable evidence, a bounded claim, and a plain-English explanation of what the research advances."
+        kicker="Method"
+        title="How records are reviewed."
+        deck="Each public record is reviewed manually against primary evidence. The status tells you whether those checks are complete or still open."
       />
-      <section className="method-steps" aria-label="Editorial process">
-        <ol>
-          {steps.map(([title, copy], index) => (
-            <li key={title}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <div>
-                <h2>{title}</h2>
-                <p>{copy}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <section className="status-explainer status-legend">
-        <article>
-          <span className="status-dot candidate-dot" />
-          <p className="section-kicker">Candidate · private</p>
-          <h2>A lead, not a public claim</h2>
-          <p>A source scan or editor has found a possible result. It does not appear publicly.</p>
-        </article>
+      <section className="status-explainer status-legend public-statuses">
         <article>
           <span className="status-dot review-dot" />
-          <p className="section-kicker amber">Under review · public</p>
-          <h2>Credible, with open checks</h2>
-          <p>Readers can inspect the source and see exactly what remains unresolved.</p>
+          <p className="section-kicker amber">Orange · under review</p>
+          <h2>Editorial checks are still open</h2>
+          <p>The primary source is public, but the record has not completed every check.</p>
         </article>
         <article>
           <span className="status-dot verified-dot" />
-          <p className="section-kicker">Verified record · public</p>
-          <h2>Evidence recorded</h2>
-          <p>An editor has checked the AI’s role, result, source, validation, and limitations.</p>
+          <p className="section-kicker">Blue · verified</p>
+          <h2>Primary-evidence checks are complete</h2>
+          <p>The AI’s role, result, source, validation, and limitations have been recorded.</p>
         </article>
       </section>
+      <p className="method-intro-note">
+        Automated scans may create private candidates, but they never publish records or change a
+        public status.
+      </p>
       <section className="checklist">
         <div>
           <p className="section-kicker">Editorial checks</p>
@@ -539,124 +506,18 @@ function HowItWorksPage() {
           <li><strong>Limitations</strong><span>What still needs review, replication, or independent confirmation?</span></li>
         </ul>
       </section>
-      <p className="method-note">
-        Nothing enters the verified registry automatically. Every public status is an editorial
-        decision backed by cited evidence.
-      </p>
-    </>
-  );
-}
-
-function ResearchersPage() {
-  return (
-    <>
-      <PageHero
-        kicker="For researchers"
-        title="Help make the evidence easy to inspect."
-        deck="A strong candidate record includes a primary source, a precise account of the AI system’s role, and a clear line between generated output and human validation."
-      />
-      <section className="researcher-grid">
+      <section className="method-policies">
         <article>
-          <p className="section-kicker">A useful record includes</p>
-          <h2>Source details</h2>
-          <ul>
-            <li>A stable paper, proof, dataset, or institutional research URL</li>
-            <li>The first public date of the result</li>
-            <li>The exact AI system or method used</li>
-            <li>A plain statement of what is genuinely new</li>
-          </ul>
+          <p className="section-kicker">Update cadence</p>
+          <h2>Reviewed weekly.</h2>
+          <p>New records publish when the evidence is ready, not on a fixed news cycle.</p>
         </article>
         <article>
-          <p className="section-kicker">Evidence details</p>
-          <h2>Validation and limits</h2>
-          <ul>
-            <li>How outputs were checked independently of the model’s prose</li>
-            <li>Whether review was formal, experimental, benchmarked, or expert-led</li>
-            <li>What remains unreplicated or unpublished</li>
-            <li>Where the authors’ interpretation begins</li>
-          </ul>
+          <p className="section-kicker">Corrections</p>
+          <h2>The evidence trail stays intact.</h2>
+          <p>Corrections are checked against primary sources. No public record changes automatically.</p>
         </article>
       </section>
-      <section className="researcher-note">
-        <div>
-          <p className="section-kicker">Submissions and corrections</p>
-          <h2>A public intake channel is next.</h2>
-        </div>
-        <p>
-          The desk currently sources records from primary literature and institutional research
-          announcements. A public submission and correction channel will open only when it can
-          preserve the same evidence trail as the registry. Until then, no automated submission
-          can become a public record.
-        </p>
-        <a className="text-link" href="/how-it-works">
-          Read the editorial method <span aria-hidden="true">→</span>
-        </a>
-      </section>
-    </>
-  );
-}
-
-function NewsroomPage({ registry, state }) {
-  const updates = useMemo(
-    () =>
-      [...registry.verified, ...registry.underReview]
-        .map((discovery) => ({
-          ...discovery,
-          updateDate:
-            discovery.status === "verified"
-              ? discovery.publishedAt || discovery.verifiedAt || discovery.announcedAt
-              : discovery.reviewStartedAt || discovery.announcedAt,
-        }))
-        .sort((a, b) => String(b.updateDate).localeCompare(String(a.updateDate))),
-    [registry],
-  );
-
-  return (
-    <>
-      <PageHero
-        kicker="Newsroom"
-        title="The registry change log."
-        deck="A dated record of breakthroughs entering verification, moving under review, and joining the public registry."
-      />
-      <RegistryState state={state} />
-      {state === "ready" && (
-        <section className="news-verified">
-          <div className="section-heading">
-            <div>
-              <p className="section-kicker">Latest movements</p>
-              <h2>Changes to the public record</h2>
-            </div>
-            <p>
-              Verified means the evidence checks were recorded. Under review means the claim is
-              credible enough to inspect publicly but is not part of the verified count.
-            </p>
-          </div>
-          <div className="news-list">
-            {updates.map((discovery) => (
-              <article key={discovery.id}>
-                <time dateTime={discovery.updateDate}>{formatDate(discovery.updateDate)}</time>
-                <span
-                  className={
-                    discovery.status === "verified"
-                      ? "news-status-verified"
-                      : "news-status-review"
-                  }
-                >
-                  {discovery.status === "verified" ? "Added to registry" : "Entered review"}
-                </span>
-                <div>
-                  <h3>{discovery.title}</h3>
-                  <p>{discovery.whyItMatters}</p>
-                </div>
-                <strong>{discovery.aiSystem}</strong>
-                <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-                  Primary source <span aria-hidden="true">↗</span>
-                </a>
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
     </>
   );
 }
@@ -671,7 +532,7 @@ function NotFoundPage() {
   );
 }
 
-function Footer({ generatedAt }) {
+function Footer({ lastEditorialUpdateAt }) {
   return (
     <footer className="site-footer">
       <div className="footer-brand">
@@ -679,19 +540,14 @@ function Footer({ generatedAt }) {
         <span>Real discoveries, explained clearly.</span>
       </div>
       <nav className="footer-links" aria-label="Footer navigation">
-        <a href="/for-researchers">For researchers</a>
-        <a href="/newsroom">Newsroom</a>
-        <a href="/how-it-works">How we verify</a>
+        <a href="/">Discoveries</a>
+        <a href="/method">Method</a>
         <a href="/about">About</a>
       </nav>
       <span>
-        {generatedAt
-          ? `Registry checked ${new Intl.DateTimeFormat("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            }).format(new Date(generatedAt))}`
-          : "Durable registry"}
+        {lastEditorialUpdateAt
+          ? `Last editorial update ${formatDateTime(lastEditorialUpdateAt)}`
+          : "Editorial update time pending"}
       </span>
     </footer>
   );
@@ -702,6 +558,7 @@ export function App() {
     verified: [],
     underReview: [],
     generatedAt: null,
+    lastEditorialUpdateAt: null,
   });
   const [state, setState] = useState("loading");
   const path = normalizePath(window.location.pathname);
@@ -735,17 +592,15 @@ export function App() {
   let content;
   if (path === "/") content = <HomePage registry={registry} state={state} />;
   else if (path === "/about") content = <AboutPage />;
-  else if (path === "/how-it-works") content = <HowItWorksPage />;
-  else if (path === "/for-researchers") content = <ResearchersPage />;
-  else if (path === "/newsroom") content = <NewsroomPage registry={registry} state={state} />;
+  else if (path === "/method" || path === "/how-it-works") content = <HowItWorksPage />;
   else content = <NotFoundPage />;
 
   return (
     <main className="page">
       <Header path={path} />
-      <NewsTicker registry={registry} state={state} />
+      <RegistryStatusBar registry={registry} state={state} />
       {content}
-      <Footer generatedAt={registry.generatedAt} />
+      <Footer lastEditorialUpdateAt={registry.lastEditorialUpdateAt} />
     </main>
   );
 }

@@ -16,7 +16,8 @@ const PUBLIC_FIELDS = `
   why_it_matters,
   ai_role_plain,
   review_started_at,
-  published_at
+  published_at,
+  updated_at
 `;
 
 const PUBLIC_STATUSES = new Set(["verified", "under_review"]);
@@ -54,6 +55,14 @@ function privateJson(data, init = {}) {
   return json(data, { ...init, headers });
 }
 
+function normalizeSqlTimestamp(value) {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+    return `${value.replace(" ", "T")}Z`;
+  }
+  return value;
+}
+
 function toPublicDiscovery(row) {
   return {
     id: row.id,
@@ -74,6 +83,7 @@ function toPublicDiscovery(row) {
     aiRole: row.ai_role_plain,
     reviewStartedAt: row.review_started_at,
     publishedAt: row.published_at,
+    updatedAt: normalizeSqlTimestamp(row.updated_at),
   };
 }
 
@@ -96,6 +106,13 @@ async function handlePublicApi(request, env, url) {
       listByStatus(env, "verified"),
       listByStatus(env, "under_review"),
     ]);
+    const lastEditorialUpdateAt = [...verified, ...underReview].reduce(
+      (latest, discovery) =>
+        discovery.updatedAt && (!latest || discovery.updatedAt > latest)
+          ? discovery.updatedAt
+          : latest,
+      null,
+    );
 
     return publicJson({
       verified,
@@ -104,6 +121,7 @@ async function handlePublicApi(request, env, url) {
         candidateVisibility: "editorial_only",
         publishing: "human_review_required",
       },
+      lastEditorialUpdateAt,
       generatedAt: new Date().toISOString(),
     });
   }
@@ -153,7 +171,7 @@ async function handleEditorialApi(request, env, url) {
 
   if (url.pathname === "/api/editorial/queue" && request.method === "GET") {
     const { results = [] } = await env.DB.prepare(
-      `SELECT ${PUBLIC_FIELDS}, intake_source, external_id, last_seen_at, created_at, updated_at
+      `SELECT ${PUBLIC_FIELDS}, intake_source, external_id, last_seen_at, created_at
        FROM discoveries
        WHERE status IN ('candidate', 'under_review')
        ORDER BY

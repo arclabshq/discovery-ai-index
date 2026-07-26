@@ -117,16 +117,15 @@ select:focus-visible {
   transform: translateY(-1px);
 }
 
-.ticker {
-  height: 49px;
+.registry-status-bar {
+  min-height: 49px;
   border-bottom: 1px solid #d8d7d2;
   display: flex;
   align-items: center;
-  overflow: hidden;
   background: #f3f1ec;
 }
 
-.ticker > strong {
+.registry-status-bar > strong {
   align-self: stretch;
   display: flex;
   align-items: center;
@@ -140,36 +139,51 @@ select:focus-visible {
   flex: 0 0 auto;
 }
 
-.ticker-window {
-  overflow: hidden;
-  flex: 1;
-}
-
-.ticker-loading {
-  display: block;
-  padding: 0 24px;
-  color: #667087;
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.ticker-current {
-  display: block;
-  width: 100%;
+.registry-status-content {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 22px;
   padding: 0 24px;
   color: #27354b;
   font-size: 13px;
   font-weight: 650;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-decoration: none;
+  line-height: 1.4;
 }
 
-.ticker-current:hover {
-  color: #1556bd;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+.registry-status-content > span {
+  white-space: nowrap;
+}
+
+.registry-status-content b {
+  color: #102345;
+}
+
+.status-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-count-dot,
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.verified-dot {
+  background: #1556bd;
+}
+
+.review-dot {
+  background: #d86120;
+}
+
+.status-updated {
+  color: #57647b;
 }
 
 .section-kicker,
@@ -276,26 +290,35 @@ select:focus-visible {
   cursor: pointer;
 }
 
-.verification-key {
-  grid-column: 1 / -1;
+.status-legend-inline {
+  max-width: 1400px;
+  margin: 0 auto 22px;
+  padding: 12px 0;
   border-top: 1px solid #d0d6df;
-  padding-top: 11px;
-  color: #4e5b70;
-}
-
-.verification-key summary {
-  width: max-content;
-  color: #1556bd;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.verification-key p {
-  max-width: 470px;
-  margin: 8px 0 0;
+  border-bottom: 1px solid #d0d6df;
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  color: #46526a;
   font-size: 13px;
-  line-height: 1.5;
+}
+
+.status-legend-inline > span {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 2px 8px;
+}
+
+.status-legend-inline em {
+  grid-column: 2;
+  color: #667087;
+  font-style: normal;
+  font-size: 12px;
+}
+
+.status-legend-inline b {
+  color: #102345;
 }
 
 .discovery-grid {
@@ -822,6 +845,34 @@ select:focus-visible {
   line-height: 1.5;
 }
 
+.independence-note {
+  max-width: 1400px;
+  margin: -35px auto 95px;
+  padding: 30px 34px;
+  border-top: 3px solid #1556bd;
+  background: #f2f5fa;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.7fr) 1fr;
+  gap: clamp(45px, 8vw, 120px);
+  align-items: start;
+}
+
+.independence-note h2,
+.method-policies h2 {
+  margin: 7px 0 0;
+  color: #17223a;
+  font: 600 27px/1.08 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.6px;
+}
+
+.independence-note > p {
+  max-width: 720px;
+  margin: 0;
+  color: #46546b;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
 .status-explainer {
   max-width: 1400px;
   margin: 65px auto 85px;
@@ -829,6 +880,11 @@ select:focus-visible {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid #b9c6dc;
   border-bottom: 1px solid #b9c6dc;
+}
+
+.status-explainer.public-statuses {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 24px;
 }
 
 .method-steps {
@@ -911,6 +967,14 @@ select:focus-visible {
   line-height: 1.6;
 }
 
+.method-intro-note {
+  max-width: 1400px;
+  margin: 0 auto 85px;
+  color: #59657a;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
 .checklist {
   max-width: 1400px;
   margin: 0 auto 100px;
@@ -949,6 +1013,30 @@ select:focus-visible {
 
 .checklist strong {
   color: #1556bd;
+}
+
+.method-policies {
+  max-width: 1400px;
+  margin: -35px auto 100px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.method-policies article {
+  padding: 25px 0 0;
+  border-top: 3px solid #1556bd;
+}
+
+.method-policies article:last-child {
+  border-top-color: #d86120;
+}
+
+.method-policies article > p:last-child {
+  max-width: 580px;
+  margin: 12px 0 0;
+  color: #536078;
+  line-height: 1.6;
 }
 
 .researcher-grid {
@@ -1172,12 +1260,16 @@ select:focus-visible {
 @media (max-width: 1480px) {
   .registry-intro,
   .registry-toolbar,
+  .status-legend-inline,
   .subpage-hero,
   .editorial-layout,
+  .independence-note,
   .method-steps,
   .status-explainer,
+  .method-intro-note,
   .checklist,
   .method-note,
+  .method-policies,
   .researcher-grid,
   .researcher-note,
   .news-verified {
@@ -1212,7 +1304,7 @@ select:focus-visible {
     padding-top: 11px;
   }
 
-  .ticker > strong {
+  .registry-status-bar > strong {
     padding-left: 30px;
   }
 
@@ -1289,18 +1381,43 @@ select:focus-visible {
     font-size: 12px;
   }
 
-  .ticker > strong {
-    padding: 0 18px 0 20px;
+  .registry-status-bar {
+    padding: 10px 20px 11px;
+    align-items: flex-start;
+    gap: 7px;
+  }
+
+  .registry-status-bar > strong {
+    align-self: auto;
+    width: 100%;
+    padding: 0;
+    border-right: 0;
+    background: transparent;
+  }
+
+  .registry-status-content {
+    padding: 0;
+    gap: 5px 14px;
+    font-size: 12px;
+  }
+
+  .registry-status-content .status-updated {
+    width: 100%;
+    white-space: normal;
   }
 
   .registry-intro,
   .registry-toolbar,
+  .status-legend-inline,
   .subpage-hero,
   .editorial-layout,
+  .independence-note,
   .method-steps,
   .status-explainer,
+  .method-intro-note,
   .checklist,
   .method-note,
+  .method-policies,
   .researcher-grid,
   .researcher-note,
   .news-verified,
@@ -1345,13 +1462,18 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .registry-toolbar label,
-  .verification-key {
+  .registry-toolbar label {
     grid-column: 1;
   }
 
   .registry-toolbar select {
     width: min(100%, 260px);
+  }
+
+  .status-legend-inline {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .view-switch {
@@ -1716,6 +1838,22 @@ select:focus-visible {
     gap: 45px;
   }
 
+  .independence-note {
+    margin-top: -25px;
+    margin-bottom: 70px;
+    padding: 25px 23px;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .status-explainer.public-statuses {
+    grid-template-columns: 1fr;
+  }
+
+  .method-intro-note {
+    margin-bottom: 60px;
+  }
+
   .method-steps {
     margin-top: 45px;
   }
@@ -1738,6 +1876,13 @@ select:focus-visible {
   .checklist li {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .method-policies {
+    margin-top: -35px;
+    margin-bottom: 70px;
+    grid-template-columns: 1fr;
+    gap: 32px;
   }
 
   .researcher-grid {

@@ -92,6 +92,7 @@ test("public registry exposes verified and under-review records but not candidat
     ai_role_plain: "The system proposed candidates that researchers checked.",
     announced_at: "2025-01-01",
     source_url: "https://example.test/source",
+    updated_at: "2026-07-24 16:30:00",
   };
   const response = await worker.fetch(
     new Request("https://example.test/api/registry"),
@@ -115,6 +116,8 @@ test("public registry exposes verified and under-review records but not candidat
     body.verified[0].aiRole,
     "The system proposed candidates that researchers checked.",
   );
+  assert.equal(body.verified[0].updatedAt, "2026-07-24T16:30:00Z");
+  assert.equal(body.lastEditorialUpdateAt, "2026-07-24T16:30:00Z");
 });
 
 test("public discovery endpoint rejects candidate access", async () => {
@@ -176,9 +179,8 @@ test("scheduled intake query is bounded by date and result count", () => {
 test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/client/index.html", import.meta.url));
   await access(new URL("../dist/client/about/index.html", import.meta.url));
+  await access(new URL("../dist/client/method/index.html", import.meta.url));
   await access(new URL("../dist/client/how-it-works/index.html", import.meta.url));
-  await access(new URL("../dist/client/for-researchers/index.html", import.meta.url));
-  await access(new URL("../dist/client/newsroom/index.html", import.meta.url));
   await access(new URL("../dist/server/index.js", import.meta.url));
   await access(new URL("../dist/.openai/hosting.json", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0001_discovery_registry.sql", import.meta.url));
