@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 const STATUS_COPY = {
   verified: "Verified record",
-  under_review: "Under review",
+  under_review: "Verification pending",
 };
 
 const NAV_ITEMS = [
@@ -101,14 +101,14 @@ function RegistryStatusBar({ registry, state }) {
             </span>
             <span className="status-count">
               <i className="status-count-dot review-dot" aria-hidden="true" />
-              <b>{reviewCount}</b> under review
+              <b>{reviewCount}</b> verification pending
             </span>
             <span className="status-updated">
               <time dateTime={registry.lastEditorialUpdateAt || undefined}>
                 Last editorial update {formatDateTime(registry.lastEditorialUpdateAt)}
               </time>
             </span>
-            <span>Reviewed weekly</span>
+            <span>Evidence checks are date-stamped</span>
           </>
         ) : (
           <span>
@@ -132,8 +132,8 @@ function StatusLegend() {
       </span>
       <span>
         <i className="legend-dot review-dot" aria-hidden="true" />
-        <b>Under review</b>
-        <em>Checks still open</em>
+        <b>Verification pending</b>
+        <em>Independent evidence still open</em>
       </span>
     </div>
   );
@@ -301,7 +301,7 @@ function MobileLeaderboard({ discoveries }) {
                   </div>
                   {!isVerified && discovery.verificationNote && (
                     <div>
-                      <h3>What still needs to be confirmed</h3>
+                      <h3>Why verification is pending</h3>
                       <p>{discovery.verificationNote}</p>
                     </div>
                   )}
@@ -378,7 +378,7 @@ function HomePage({ registry, state }) {
         <>
           <p className="sr-only" aria-live="polite">
             {filtered.length} {filtered.length === 1 ? "discovery" : "discoveries"} shown:
-            {" "}{visibleVerified} verified and {visibleUnderReview} under review.
+            {" "}{visibleVerified} verified and {visibleUnderReview} verification pending.
           </p>
           {filtered.length ? (
             isMobile ? (
@@ -456,12 +456,13 @@ function AboutPage() {
       <section className="independence-note">
         <div>
           <p className="section-kicker">Independent project</p>
-          <h2>Maintained by one editor.</h2>
+          <h2>Maintained with AI-assisted editorial review.</h2>
         </div>
         <p>
-          Discovery Index is independently maintained and is not affiliated with the researchers
-          or organizations listed. Records are reviewed manually and corrected as stronger
-          evidence appears.
+          Discovery Index uses an AI-assisted editorial system to trace primary sources and
+          document external verification. It does not independently prove claims or represent the
+          researchers listed. Status changes are based on published evidence and recorded with an
+          editorial note.
         </p>
       </section>
     </>
@@ -474,25 +475,26 @@ function HowItWorksPage() {
       <PageHero
         kicker="Method"
         title="Two statuses. One evidence trail."
-        deck="Orange means our review is still open. Blue means the review is complete. Every public record links to the original research."
+        deck="Orange means independent evidence is still missing. Blue means external verification is documented. Every public record links to the original research."
       />
       <section className="status-explainer status-legend public-statuses">
         <article>
           <span className="status-dot review-dot" />
-          <p className="section-kicker amber">Orange · under review</p>
-          <h2>Source linked. Checks open.</h2>
+          <p className="section-kicker amber">Orange · verification pending</p>
+          <h2>Primary source linked. Independent evidence still open.</h2>
           <p>
-            The result is visible, but we are still checking what is new, how AI contributed, or
-            how the result was validated.
+            The AI-assisted editorial system has checked the source, but the record still lacks
+            sufficient independent evidence such as peer review, expert verification, formal
+            checking, or replication.
           </p>
         </article>
         <article>
           <span className="status-dot verified-dot" />
           <p className="section-kicker">Blue · verified</p>
-          <h2>Review complete.</h2>
+          <h2>External verification documented.</h2>
           <p>
-            The record states what changed, how AI contributed, how the result was checked, and
-            what limitations remain.
+            The record documents what changed, how AI contributed, the strongest independent
+            check, and any material limitation that remains.
           </p>
         </article>
       </section>
@@ -513,8 +515,12 @@ function HowItWorksPage() {
       <section className="method-policies">
         <article>
           <p className="section-kicker">Update cadence</p>
-          <h2>Reviewed weekly.</h2>
-          <p>New records publish when the evidence is ready, not on a fixed news cycle.</p>
+          <h2>Evidence checks are date-stamped.</h2>
+          <p>
+            Pending records are rechecked for new paper versions, peer review, independent expert
+            reports, formal checks, replications, corrections, and retractions. A scan alone never
+            changes a public status.
+          </p>
         </article>
         <article>
           <p className="section-kicker">Corrections</p>
