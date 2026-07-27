@@ -469,34 +469,38 @@ select:focus-visible {
 
 .registry-table {
   width: 100%;
-  min-width: 1120px;
+  min-width: 1260px;
   table-layout: fixed;
   border-collapse: collapse;
   border-top: 3px solid #1556bd;
 }
 
 .registry-table .col-date {
-  width: 10%;
-}
-
-.registry-table .col-field {
   width: 9%;
 }
 
+.registry-table .col-field {
+  width: 8%;
+}
+
 .registry-table .col-discovery {
-  width: 28%;
+  width: 19%;
 }
 
 .registry-table .col-summary {
-  width: 24%;
+  width: 19%;
+}
+
+.registry-table .col-impact {
+  width: 17%;
 }
 
 .registry-table .col-system {
-  width: 15%;
+  width: 16%;
 }
 
 .registry-table .col-evidence {
-  width: 14%;
+  width: 12%;
 }
 
 .registry-table th {
@@ -513,11 +517,6 @@ select:focus-visible {
 .registry-table th:first-child,
 .registry-table td:first-child {
   padding-left: 0;
-}
-
-.registry-table th:last-child,
-.registry-table td:last-child {
-  padding-right: 0;
 }
 
 .registry-table td {
@@ -549,16 +548,74 @@ select:focus-visible {
   letter-spacing: -0.45px;
 }
 
-.record-title p {
-  margin: 13px 0 0;
-  color: #354156;
-  line-height: 1.55;
+.record-plain-summary,
+.record-impact {
+  color: #354156 !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
 }
 
-.record-summary {
-  color: #354156 !important;
-  font-size: 14px !important;
-  line-height: 1.58 !important;
+.discovery-history {
+  display: grid;
+  grid-template-columns: auto 10px auto;
+  gap: 4px 6px;
+  align-items: center;
+  width: fit-content;
+  margin-top: 14px;
+  color: #536178;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.discovery-history > span {
+  display: grid;
+  gap: 2px;
+}
+
+.discovery-history b,
+.discovery-history a {
+  color: #1556bd;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.discovery-history a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.discovery-history em {
+  color: #647087;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.discovery-history > i {
+  color: #7d8799;
+  font-style: normal;
+}
+
+.discovery-history > strong {
+  grid-column: 1 / -1;
+  width: fit-content;
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: #eef2f8;
+  color: #3d4d67;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.row-review .discovery-history b,
+.row-review .discovery-history a {
+  color: #b84a10;
 }
 
 .record-system strong {
@@ -576,9 +633,18 @@ select:focus-visible {
 }
 
 .record-evidence {
-  display: grid;
-  justify-items: start;
-  gap: 11px;
+  overflow-wrap: anywhere;
+}
+
+.record-evidence .status {
+  max-width: 100%;
+  margin-bottom: 11px;
+  white-space: normal;
+}
+
+.record-evidence a {
+  display: block;
+  width: fit-content;
 }
 
 .status {
@@ -1605,7 +1671,7 @@ select:focus-visible {
     letter-spacing: -0.3px;
   }
 
-  .leaderboard-why {
+  .leaderboard-summary {
     display: -webkit-box;
     overflow: hidden;
     color: #354156;
@@ -1615,9 +1681,37 @@ select:focus-visible {
     -webkit-line-clamp: 2;
   }
 
-  .leaderboard-row[open] .leaderboard-why {
+  .leaderboard-row[open] .leaderboard-summary {
     display: block;
     overflow: visible;
+  }
+
+  .discovery-history-compact {
+    display: flex;
+    gap: 5px;
+    margin: 0;
+    color: #637087;
+    font-size: 9px;
+  }
+
+  .discovery-history-compact > span {
+    display: inline;
+  }
+
+  .discovery-history-compact b,
+  .discovery-history-compact a {
+    font-size: 9px;
+  }
+
+  .discovery-history-compact > strong {
+    padding: 0;
+    background: transparent;
+    color: #3d4d67;
+    font-size: 8px;
+  }
+
+  .leaderboard-review .discovery-history-compact > strong {
+    color: #b84a10;
   }
 
   .leaderboard-footer {

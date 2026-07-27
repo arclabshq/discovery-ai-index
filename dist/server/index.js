@@ -15,6 +15,11 @@ const PUBLIC_FIELDS = `
   evidence_level,
   why_it_matters,
   ai_role_plain,
+  history_start_label,
+  history_start_date,
+  history_result_label,
+  history_duration_label,
+  history_source_url,
   review_started_at,
   published_at,
   updated_at
@@ -81,6 +86,15 @@ function toPublicDiscovery(row) {
     evidenceLevel: row.evidence_level,
     whyItMatters: row.why_it_matters,
     aiRole: row.ai_role_plain,
+    history: row.history_start_date
+      ? {
+          startLabel: row.history_start_label,
+          startDate: row.history_start_date,
+          resultLabel: row.history_result_label,
+          durationLabel: row.history_duration_label,
+          sourceUrl: row.history_source_url,
+        }
+      : null,
     reviewStartedAt: row.review_started_at,
     publishedAt: row.published_at,
     updatedAt: normalizeSqlTimestamp(row.updated_at),

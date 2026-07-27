@@ -41,6 +41,41 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
+function yearFromDate(value) {
+  return value ? value.slice(0, 4) : "Date pending";
+}
+
+function DiscoveryHistory({ discovery, compact = false }) {
+  const history = discovery.history;
+  if (!history?.startDate || !history?.durationLabel) return null;
+
+  return (
+    <span
+      className={`discovery-history${compact ? " discovery-history-compact" : ""}`}
+      aria-label={`${history.startLabel} ${yearFromDate(history.startDate)}; ${
+        history.resultLabel
+      } ${yearFromDate(discovery.announcedAt)}; reported after ${history.durationLabel}`}
+    >
+      <span>
+        {history.sourceUrl ? (
+          <a href={history.sourceUrl} target="_blank" rel="noreferrer">
+            {yearFromDate(history.startDate)}
+          </a>
+        ) : (
+          <b>{yearFromDate(history.startDate)}</b>
+        )}
+        {!compact && <em>{history.startLabel}</em>}
+      </span>
+      <i aria-hidden="true">→</i>
+      <span>
+        <b>{yearFromDate(discovery.announcedAt)}</b>
+        {!compact && <em>{history.resultLabel}</em>}
+      </span>
+      <strong>{history.durationLabel}</strong>
+    </span>
+  );
+}
+
 function normalizePath(pathname) {
   if (pathname === "/") return pathname;
   return pathname.replace(/\/+$/, "");
@@ -175,6 +210,7 @@ function RegistryTable({ discoveries }) {
           <col className="col-field" />
           <col className="col-discovery" />
           <col className="col-summary" />
+          <col className="col-impact" />
           <col className="col-system" />
           <col className="col-evidence" />
         </colgroup>
@@ -183,6 +219,7 @@ function RegistryTable({ discoveries }) {
             <th scope="col">Announced</th>
             <th scope="col">Field</th>
             <th scope="col">Breakthrough</th>
+            <th scope="col">Summary</th>
             <th scope="col">Why this matters</th>
             <th scope="col">How AI helped</th>
             <th scope="col">Evidence</th>
@@ -206,9 +243,12 @@ function RegistryTable({ discoveries }) {
                 </td>
                 <td className="record-title" data-label="What was discovered">
                   <h3>{discovery.title}</h3>
-                  <p>{discovery.summary}</p>
+                  <DiscoveryHistory discovery={discovery} />
                 </td>
-                <td className="record-summary" data-label="Why this matters">
+                <td className="record-plain-summary" data-label="Summary">
+                  {discovery.summary}
+                </td>
+                <td className="record-impact" data-label="Why this matters">
                   {discovery.whyItMatters}
                 </td>
                 <td className="record-system" data-label="How AI helped">
@@ -270,7 +310,8 @@ function MobileLeaderboard({ discoveries }) {
                       </time>
                     </span>
                     <span className="leaderboard-title">{discovery.title}</span>
-                    <span className="leaderboard-why">{discovery.whyItMatters}</span>
+                    <DiscoveryHistory discovery={discovery} compact />
+                    <span className="leaderboard-summary">{discovery.summary}</span>
                     <span className="leaderboard-footer">
                       <strong>{discovery.aiSystem}</strong>
                       <span
@@ -291,6 +332,16 @@ function MobileLeaderboard({ discoveries }) {
                   <div>
                     <h3>What was discovered</h3>
                     <p>{discovery.summary}</p>
+                  </div>
+                  {discovery.history && (
+                    <div>
+                      <h3>Problem history</h3>
+                      <DiscoveryHistory discovery={discovery} />
+                    </div>
+                  )}
+                  <div>
+                    <h3>Why this matters</h3>
+                    <p>{discovery.whyItMatters}</p>
                   </div>
                   <div>
                     <h3>How AI helped</h3>

@@ -90,6 +90,11 @@ test("public registry exposes verified and under-review records but not candidat
     field: "Science",
     ai_system: "System",
     ai_role_plain: "The system proposed candidates that researchers checked.",
+    history_start_label: "Conjecture published",
+    history_start_date: "2024-05-06",
+    history_result_label: "Proof posted",
+    history_duration_label: "776 days",
+    history_source_url: "https://example.test/origin",
     announced_at: "2025-01-01",
     source_url: "https://example.test/source",
     updated_at: "2026-07-24 16:30:00",
@@ -117,6 +122,13 @@ test("public registry exposes verified and under-review records but not candidat
     "The system proposed candidates that researchers checked.",
   );
   assert.equal(body.verified[0].updatedAt, "2026-07-24T16:30:00Z");
+  assert.deepEqual(body.verified[0].history, {
+    startLabel: "Conjecture published",
+    startDate: "2024-05-06",
+    resultLabel: "Proof posted",
+    durationLabel: "776 days",
+    sourceUrl: "https://example.test/origin",
+  });
   assert.equal(body.lastEditorialUpdateAt, "2026-07-24T16:30:00Z");
 });
 
@@ -188,4 +200,5 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/.openai/drizzle/0004_plain_language_registry.sql", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0005_research_significance.sql", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0006_reader_first_registry.sql", import.meta.url));
+  await access(new URL("../dist/.openai/drizzle/0007_discovery_history.sql", import.meta.url));
 });
