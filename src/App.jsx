@@ -5,6 +5,11 @@ const STATUS_COPY = {
   under_review: "Verification pending",
 };
 
+const TABLE_STATUS_COPY = {
+  verified: "Verified",
+  under_review: "Pending",
+};
+
 const NAV_ITEMS = [
   { href: "/#registry", label: "Discoveries", match: "/" },
   { href: "/method", label: "Method", match: "/method" },
@@ -45,13 +50,13 @@ function yearFromDate(value) {
   return value ? value.slice(0, 4) : "Date pending";
 }
 
-function DiscoveryHistory({ discovery, compact = false }) {
+function DiscoveryHistory({ discovery }) {
   const history = discovery.history;
   if (!history?.startDate || !history?.durationLabel) return null;
 
   return (
     <span
-      className={`discovery-history${compact ? " discovery-history-compact" : ""}`}
+      className="discovery-history"
       aria-label={`${history.startLabel} ${yearFromDate(history.startDate)}; ${
         history.resultLabel
       } ${yearFromDate(discovery.announcedAt)}; reported after ${history.durationLabel}`}
@@ -64,12 +69,12 @@ function DiscoveryHistory({ discovery, compact = false }) {
         ) : (
           <b>{yearFromDate(history.startDate)}</b>
         )}
-        {!compact && <em>{history.startLabel}</em>}
+        <em>{history.startLabel}</em>
       </span>
       <i aria-hidden="true">→</i>
       <span>
         <b>{yearFromDate(discovery.announcedAt)}</b>
-        {!compact && <em>{history.resultLabel}</em>}
+        <em>{history.resultLabel}</em>
       </span>
       <strong>{history.durationLabel}</strong>
     </span>
@@ -108,7 +113,11 @@ function Header({ path }) {
           <a
             href={item.href}
             key={item.href}
-            aria-current={path === item.match ? "page" : undefined}
+            aria-current={
+              path === item.match || (item.match === "/" && path.startsWith("/discoveries/"))
+                ? "page"
+                : undefined
+            }
           >
             {item.label}
           </a>
@@ -208,20 +217,20 @@ function RegistryTable({ discoveries }) {
         <colgroup>
           <col className="col-date" />
           <col className="col-field" />
+          <col className="col-model" />
           <col className="col-discovery" />
           <col className="col-summary" />
           <col className="col-impact" />
-          <col className="col-system" />
           <col className="col-evidence" />
         </colgroup>
         <thead>
           <tr>
             <th scope="col">Announced</th>
             <th scope="col">Field</th>
+            <th scope="col">Model</th>
             <th scope="col">Breakthrough</th>
             <th scope="col">Summary</th>
             <th scope="col">Why this matters</th>
-            <th scope="col">How AI helped</th>
             <th scope="col">Evidence</th>
           </tr>
         </thead>
@@ -241,9 +250,19 @@ function RegistryTable({ discoveries }) {
                 <td className="record-field" data-label="Field">
                   {discovery.field}
                 </td>
-                <td className="record-title" data-label="What was discovered">
-                  <h3>{discovery.title}</h3>
-                  <DiscoveryHistory discovery={discovery} />
+                <td className="record-model" data-label="Model">
+                  <strong>{discovery.aiSystem}</strong>
+                </td>
+                <td className="record-title" data-label="Breakthrough">
+                  <h3>
+                    <a
+                      className="record-link"
+                      href={`/discoveries/${discovery.slug}`}
+                      aria-label={`View record: ${discovery.title}`}
+                    >
+                      {discovery.title} <span aria-hidden="true">→</span>
+                    </a>
+                  </h3>
                 </td>
                 <td className="record-plain-summary" data-label="Summary">
                   {discovery.summary}
@@ -251,19 +270,15 @@ function RegistryTable({ discoveries }) {
                 <td className="record-impact" data-label="Why this matters">
                   {discovery.whyItMatters}
                 </td>
-                <td className="record-system" data-label="How AI helped">
-                  <p>
-                    {discovery.aiRole ||
-                      "The original research documents how the system contributed to the result."}
-                  </p>
-                  <strong>{discovery.aiSystem}</strong>
-                </td>
                 <td className="record-evidence" data-label="Evidence">
-                  <span className={`status ${isVerified ? "verified" : "reviewing"}`}>
-                    {STATUS_COPY[discovery.status]}
-                  </span>
-                  <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-                    Original research <span aria-hidden="true">↗</span>
+                  <a
+                    className={`status evidence-link ${isVerified ? "verified" : "reviewing"}`}
+                    href={`/discoveries/${discovery.slug}#evidence`}
+                    aria-label={`${TABLE_STATUS_COPY[discovery.status]}: View evidence for ${
+                      discovery.title
+                    }`}
+                  >
+                    {TABLE_STATUS_COPY[discovery.status]}
                   </a>
                 </td>
               </tr>
@@ -297,70 +312,37 @@ function MobileLeaderboard({ discoveries }) {
               id={`record-${discovery.slug}`}
               key={discovery.id}
             >
-              <details className="leaderboard-row">
-                <summary data-testid={`leaderboard-row-${discovery.slug}`}>
-                  <span className="leaderboard-index" aria-hidden="true">
-                    {String(index + 1).padStart(2, "0")}
+              <a
+                className="leaderboard-row"
+                data-testid={`leaderboard-row-${discovery.slug}`}
+                href={`/discoveries/${discovery.slug}`}
+                aria-label={`View record: ${discovery.title}`}
+              >
+                <span className="leaderboard-index" aria-hidden="true">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="leaderboard-content">
+                  <span className="leaderboard-meta">
+                    <span>{discovery.field}</span>
+                    <time dateTime={discovery.announcedAt}>
+                      {formatDate(discovery.announcedAt)}
+                    </time>
                   </span>
-                  <span className="leaderboard-content">
-                    <span className="leaderboard-meta">
-                      <span>{discovery.field}</span>
-                      <time dateTime={discovery.announcedAt}>
-                        {formatDate(discovery.announcedAt)}
-                      </time>
+                  <span className="leaderboard-title">{discovery.title}</span>
+                  <span className="leaderboard-summary">{discovery.summary}</span>
+                  <span className="leaderboard-footer">
+                    <strong>{discovery.aiSystem}</strong>
+                    <span
+                      className={`leaderboard-status ${
+                        isVerified ? "leaderboard-status-verified" : "leaderboard-status-review"
+                      }`}
+                    >
+                      {TABLE_STATUS_COPY[discovery.status]}
                     </span>
-                    <span className="leaderboard-title">{discovery.title}</span>
-                    <DiscoveryHistory discovery={discovery} compact />
-                    <span className="leaderboard-summary">{discovery.summary}</span>
-                    <span className="leaderboard-footer">
-                      <strong>{discovery.aiSystem}</strong>
-                      <span
-                        className={`leaderboard-status ${
-                          isVerified ? "leaderboard-status-verified" : "leaderboard-status-review"
-                        }`}
-                      >
-                        {STATUS_COPY[discovery.status]}
-                      </span>
-                    </span>
                   </span>
-                  <span className="leaderboard-action" aria-hidden="true">
-                    <span className="action-open">View</span>
-                    <span className="action-close">Close</span>
-                  </span>
-                </summary>
-                <div className="leaderboard-detail">
-                  <div>
-                    <h3>What was discovered</h3>
-                    <p>{discovery.summary}</p>
-                  </div>
-                  {discovery.history && (
-                    <div>
-                      <h3>Problem history</h3>
-                      <DiscoveryHistory discovery={discovery} />
-                    </div>
-                  )}
-                  <div>
-                    <h3>Why this matters</h3>
-                    <p>{discovery.whyItMatters}</p>
-                  </div>
-                  <div>
-                    <h3>How AI helped</h3>
-                    <p>
-                      {discovery.aiRole ||
-                        "The original research documents how the system contributed to the result."}
-                    </p>
-                  </div>
-                  {!isVerified && discovery.verificationNote && (
-                    <div>
-                      <h3>Why verification is pending</h3>
-                      <p>{discovery.verificationNote}</p>
-                    </div>
-                  )}
-                  <a href={discovery.primaryUrl} target="_blank" rel="noreferrer">
-                    Read the original research <span aria-hidden="true">↗</span>
-                  </a>
-                </div>
-              </details>
+                </span>
+                <span className="leaderboard-action" aria-hidden="true">View</span>
+              </a>
             </li>
           );
         })}
@@ -445,6 +427,123 @@ function HomePage({ registry, state }) {
         </>
       )}
     </>
+  );
+}
+
+function DiscoveryRecordPage({ discovery, state }) {
+  if (state !== "ready") {
+    return (
+      <section className="record-page record-page-state">
+        <a className="record-back" href="/#registry">← Back to all discoveries</a>
+        <RegistryState state={state} />
+      </section>
+    );
+  }
+
+  if (!discovery) return <NotFoundPage />;
+
+  const isVerified = discovery.status === "verified";
+  const statusClass = isVerified ? "verified" : "reviewing";
+  const verificationHeading = isVerified
+    ? "External verification is documented."
+    : "Independent evidence is still open.";
+  const statusCriteria = isVerified
+    ? "Verified means the registry has documented a meaningful independent check. It does not imply that every possible application or consequence has been replicated."
+    : "This record changes to Verified only after peer review, expert verification, formal checking, replication, or comparable independent evidence is documented.";
+
+  return (
+    <article className={`record-page ${isVerified ? "record-page-verified" : "record-page-review"}`}>
+      <a className="record-back" href="/#registry">← Back to all discoveries</a>
+
+      <header className="record-page-hero">
+        <div className="record-page-meta">
+          <span>{discovery.field}</span>
+          <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
+          <span className={`status ${statusClass}`}>{STATUS_COPY[discovery.status]}</span>
+        </div>
+        <h1>{discovery.title}</h1>
+        <p>{discovery.summary}</p>
+      </header>
+
+      <section className="record-detail-grid" aria-label="Discovery overview">
+        <article>
+          <p className="section-kicker">Model</p>
+          <h2>{discovery.aiSystem}</h2>
+          <p>
+            {discovery.aiRole ||
+              "The original research documents how the system contributed to the result."}
+          </p>
+        </article>
+        <article>
+          <p className="section-kicker">Why this matters</p>
+          <h2>The significance of the result</h2>
+          <p>{discovery.whyItMatters}</p>
+        </article>
+      </section>
+
+      {discovery.history && (
+        <section className="record-history-panel">
+          <div>
+            <p className="section-kicker">Problem history</p>
+            <h2>From the original question to the reported result.</h2>
+            <p>The starting date links to the original conjecture or problem statement.</p>
+          </div>
+          <DiscoveryHistory discovery={discovery} />
+        </section>
+      )}
+
+      <section className="record-proof" id="evidence">
+        <header>
+          <div>
+            <p className="section-kicker">Evidence</p>
+            <h2>{verificationHeading}</h2>
+          </div>
+          <span className={`status ${statusClass}`}>{STATUS_COPY[discovery.status]}</span>
+        </header>
+        <div className="record-proof-grid">
+          <article>
+            <h3>{isVerified ? "What was checked" : "What remains open"}</h3>
+            <p>
+              {discovery.verificationNote ||
+                "The evidence note is being prepared from the strongest available primary source."}
+            </p>
+            <p className="record-criteria">{statusCriteria}</p>
+          </article>
+          <aside>
+            <dl>
+              <div>
+                <dt>Primary source</dt>
+                <dd>{discovery.sourceLabel || "Original research"}</dd>
+              </div>
+              <div>
+                <dt>Source type</dt>
+                <dd>{discovery.sourceType || "Research publication"}</dd>
+              </div>
+              <div>
+                <dt>Last evidence check</dt>
+                <dd>
+                  <time dateTime={discovery.updatedAt || undefined}>
+                    {formatDateTime(discovery.updatedAt)}
+                  </time>
+                </dd>
+              </div>
+            </dl>
+            <a
+              className="record-source-link"
+              href={discovery.primaryUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read the original research <span aria-hidden="true">↗</span>
+            </a>
+          </aside>
+        </div>
+      </section>
+
+      <nav className="record-bottom-nav" aria-label="Discovery record navigation">
+        <a href="/#registry">← Browse all discoveries</a>
+      </nav>
+    </article>
   );
 }
 
@@ -623,10 +722,19 @@ export function App() {
   });
   const [state, setState] = useState("loading");
   const path = normalizePath(window.location.pathname);
+  const recordSlug = path.match(/^\/discoveries\/([^/]+)$/)?.[1] || null;
+  const discoveries = [...registry.verified, ...registry.underReview];
+  const selectedDiscovery = recordSlug
+    ? discoveries.find((discovery) => discovery.slug === recordSlug)
+    : null;
 
   useEffect(() => {
-    document.title = PAGE_TITLES[path] || "Page not found — Discovery Index";
-  }, [path]);
+    document.title = selectedDiscovery
+      ? `${selectedDiscovery.title} — Discovery Index`
+      : recordSlug
+        ? "Discovery record — Discovery Index"
+        : PAGE_TITLES[path] || "Page not found — Discovery Index";
+  }, [path, recordSlug, selectedDiscovery]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -652,6 +760,9 @@ export function App() {
 
   let content;
   if (path === "/") content = <HomePage registry={registry} state={state} />;
+  else if (recordSlug) {
+    content = <DiscoveryRecordPage discovery={selectedDiscovery} state={state} />;
+  }
   else if (path === "/about") content = <AboutPage />;
   else if (path === "/method" || path === "/how-it-works") content = <HowItWorksPage />;
   else content = <NotFoundPage />;

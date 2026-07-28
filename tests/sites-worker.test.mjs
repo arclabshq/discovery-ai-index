@@ -39,10 +39,10 @@ test("serves existing static assets without a fallback", async () => {
   assert.deepEqual(calls, ["/assets/app.js"]);
 });
 
-test("serves the root app shell for an app route before the asset layer can redirect it", async () => {
+test("serves the root app shell for a discovery record before the asset layer can redirect it", async () => {
   const calls = [];
   const response = await worker.fetch(
-    new Request("https://example.test/flow/step-two?source=share", {
+    new Request("https://example.test/discoveries/record?source=share", {
       headers: { accept: "text/html" },
     }),
     {
