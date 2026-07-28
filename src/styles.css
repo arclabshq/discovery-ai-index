@@ -566,11 +566,14 @@ select:focus-visible {
 
 .record-plain-summary,
 .record-impact {
-  display: -webkit-box;
-  overflow: hidden;
   color: #354156 !important;
   font-size: 13px !important;
   line-height: 1.55 !important;
+}
+
+.record-cell-clamp {
+  display: -webkit-box;
+  overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }

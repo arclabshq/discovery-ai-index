@@ -265,10 +265,10 @@ function RegistryTable({ discoveries }) {
                   </h3>
                 </td>
                 <td className="record-plain-summary" data-label="Summary">
-                  {discovery.summary}
+                  <span className="record-cell-clamp">{discovery.summary}</span>
                 </td>
                 <td className="record-impact" data-label="Why this matters">
-                  {discovery.whyItMatters}
+                  <span className="record-cell-clamp">{discovery.whyItMatters}</span>
                 </td>
                 <td className="record-evidence" data-label="Evidence">
                   <a
