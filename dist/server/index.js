@@ -13,6 +13,8 @@ const PUBLIC_FIELDS = `
   source_type,
   verification_note,
   evidence_level,
+  discovery_type,
+  validation_stage,
   why_it_matters,
   ai_role_plain,
   history_start_label,
@@ -27,6 +29,37 @@ const PUBLIC_FIELDS = `
 
 const PUBLIC_STATUSES = new Set(["verified", "under_review"]);
 const EDITORIAL_STATUSES = new Set(["candidate", "under_review", "verified", "rejected"]);
+const DISCOVERY_TYPES = new Set([
+  "discovery",
+  "proof",
+  "design",
+  "translation",
+  "research_milestone",
+  "unclassified",
+]);
+const VALIDATION_STAGES = new Set([
+  "not_assessed",
+  "primary_source_only",
+  "author_checked",
+  "author_reported_experimental",
+  "expert_checked",
+  "formally_verified",
+  "peer_reviewed",
+  "statistical_validation",
+  "field_confirmed",
+  "lab_confirmed",
+  "animal_study",
+  "human_cell_study",
+  "hardware_demonstration",
+  "human_trial",
+  "deployed",
+]);
+const WEAK_VERIFIED_STAGES = new Set([
+  "not_assessed",
+  "primary_source_only",
+  "author_checked",
+  "author_reported_experimental",
+]);
 const TRANSITIONS = {
   candidate: new Set(["under_review", "rejected"]),
   under_review: new Set(["verified", "rejected"]),
@@ -84,6 +117,8 @@ function toPublicDiscovery(row) {
     sourceType: row.source_type,
     verificationNote: row.verification_note,
     evidenceLevel: row.evidence_level,
+    discoveryType: row.discovery_type,
+    validationStage: row.validation_stage,
     whyItMatters: row.why_it_matters,
     aiRole: row.ai_role_plain,
     history: row.history_start_date
@@ -196,6 +231,86 @@ async function handleEditorialApi(request, env, url) {
     return privateJson({ discoveries: results });
   }
 
+  const classificationMatch = url.pathname.match(
+    /^\/api\/editorial\/discoveries\/([^/]+)\/classification$/,
+  );
+  if (classificationMatch && request.method === "PATCH") {
+    let payload;
+    try {
+      payload = await readJson(request);
+    } catch (error) {
+      return privateJson({ error: error.message }, { status: 400 });
+    }
+
+    const discoveryType =
+      typeof payload.discoveryType === "string" ? payload.discoveryType.trim() : "";
+    const validationStage =
+      typeof payload.validationStage === "string" ? payload.validationStage.trim() : "";
+    const note = typeof payload.note === "string" ? payload.note.trim() : "";
+    if (
+      !DISCOVERY_TYPES.has(discoveryType) ||
+      !VALIDATION_STAGES.has(validationStage) ||
+      !note
+    ) {
+      return privateJson(
+        { error: "A valid discovery type, validation stage, and editorial note are required." },
+        { status: 400 },
+      );
+    }
+
+    const id = decodeURIComponent(classificationMatch[1]);
+    const current = await env.DB.prepare(
+      `SELECT id, status, discovery_type, validation_stage
+       FROM discoveries
+       WHERE id = ?`,
+    )
+      .bind(id)
+      .first();
+    if (!current) return privateJson({ error: "Discovery not found." }, { status: 404 });
+    if (current.status === "verified" && WEAK_VERIFIED_STAGES.has(validationStage)) {
+      return privateJson(
+        { error: "A verified record cannot retain a weak or unassessed validation stage." },
+        { status: 409 },
+      );
+    }
+
+    const now = new Date().toISOString();
+    const update = env.DB.prepare(
+      `UPDATE discoveries
+       SET discovery_type = ?, validation_stage = ?, updated_at = ?
+       WHERE id = ? AND discovery_type = ? AND validation_stage = ?`,
+    ).bind(
+      discoveryType,
+      validationStage,
+      now,
+      id,
+      current.discovery_type,
+      current.validation_stage,
+    );
+    const event = env.DB.prepare(
+      `INSERT INTO editorial_events
+        (id, discovery_id, from_status, to_status, note, actor, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      crypto.randomUUID(),
+      id,
+      current.status,
+      current.status,
+      `${note} Classification changed from ${current.discovery_type}/${current.validation_stage} to ${discoveryType}/${validationStage}.`,
+      "authenticated editor",
+      now,
+    );
+
+    const [updateResult] = await env.DB.batch([update, event]);
+    if (updateResult.meta?.changes !== 1) {
+      return privateJson(
+        { error: "The record changed during review. Reload the queue and try again." },
+        { status: 409 },
+      );
+    }
+    return privateJson({ id, discoveryType, validationStage, updatedAt: now });
+  }
+
   const transitionMatch = url.pathname.match(
     /^\/api\/editorial\/discoveries\/([^/]+)\/transition$/,
   );
@@ -228,6 +343,9 @@ async function handleEditorialApi(request, env, url) {
          source_label,
          source_type,
          verification_note,
+         evidence_level,
+         discovery_type,
+         validation_stage,
          why_it_matters,
          ai_role_plain
        FROM discoveries
@@ -258,6 +376,18 @@ async function handleEditorialApi(request, env, url) {
           : current.source_label,
       sourceType:
         typeof payload.sourceType === "string" ? payload.sourceType.trim() : current.source_type,
+      evidenceLevel:
+        typeof payload.evidenceLevel === "string"
+          ? payload.evidenceLevel.trim()
+          : current.evidence_level,
+      discoveryType:
+        typeof payload.discoveryType === "string"
+          ? payload.discoveryType.trim()
+          : current.discovery_type,
+      validationStage:
+        typeof payload.validationStage === "string"
+          ? payload.validationStage.trim()
+          : current.validation_stage,
       whyItMatters:
         typeof payload.whyItMatters === "string"
           ? payload.whyItMatters.trim()
@@ -279,6 +409,9 @@ async function handleEditorialApi(request, env, url) {
         "aiSystem",
         "sourceLabel",
         "sourceType",
+        "evidenceLevel",
+        "discoveryType",
+        "validationStage",
         "whyItMatters",
         "aiRole",
         "verificationNote",
@@ -293,9 +426,25 @@ async function handleEditorialApi(request, env, url) {
       );
     }
 
+    if (
+      !DISCOVERY_TYPES.has(editorialRecord.discoveryType) ||
+      !VALIDATION_STAGES.has(editorialRecord.validationStage)
+    ) {
+      return privateJson(
+        { error: "A valid discovery type and validation stage are required." },
+        { status: 400 },
+      );
+    }
+
     if (nextStatus === "verified" && !verificationNote && !current.verification_note) {
       return privateJson(
         { error: "A verification note is required before publication." },
+        { status: 400 },
+      );
+    }
+    if (nextStatus === "verified" && WEAK_VERIFIED_STAGES.has(editorialRecord.validationStage)) {
+      return privateJson(
+        { error: "A verified record requires a stronger documented validation stage." },
         { status: 400 },
       );
     }
@@ -312,6 +461,9 @@ async function handleEditorialApi(request, env, url) {
          source_label = ?,
          source_type = ?,
          verification_note = ?,
+         evidence_level = ?,
+         discovery_type = ?,
+         validation_stage = ?,
          why_it_matters = ?,
          ai_role_plain = ?,
          review_started_at = CASE
@@ -331,6 +483,9 @@ async function handleEditorialApi(request, env, url) {
       editorialRecord.sourceLabel,
       editorialRecord.sourceType,
       editorialRecord.verificationNote,
+      editorialRecord.evidenceLevel,
+      editorialRecord.discoveryType,
+      editorialRecord.validationStage,
       editorialRecord.whyItMatters,
       editorialRecord.aiRole,
       nextStatus,
@@ -487,7 +642,7 @@ async function runCandidateIntake(env, now = new Date()) {
     const response = await fetch(buildArxivUrl(now, env), {
       headers: {
         accept: "application/atom+xml",
-        "user-agent": "DiscoveryIndex/1.0 evidence-registry candidate scanner",
+        "user-agent": "DiscoveryAIIndex/1.0 evidence-registry candidate scanner",
       },
     });
     if (!response.ok) throw new Error(`Source returned HTTP ${response.status}.`);
@@ -498,6 +653,27 @@ async function runCandidateIntake(env, now = new Date()) {
     let added = 0;
 
     for (const entry of candidates) {
+      const existing = await env.DB.prepare(
+        `SELECT id, status
+         FROM discoveries
+         WHERE source_url = ?
+         LIMIT 1`,
+      )
+        .bind(entry.sourceUrl)
+        .first();
+      if (existing) {
+        if (existing.status === "candidate") {
+          await env.DB.prepare(
+            `UPDATE discoveries
+             SET last_seen_at = ?
+             WHERE id = ? AND status = 'candidate'`,
+          )
+            .bind(seenAt, existing.id)
+            .run();
+        }
+        continue;
+      }
+
       const result = await env.DB.prepare(
         `INSERT OR IGNORE INTO discoveries (
           id,
@@ -513,6 +689,8 @@ async function runCandidateIntake(env, now = new Date()) {
           source_type,
           verification_note,
           evidence_level,
+          discovery_type,
+          validation_stage,
           why_it_matters,
           intake_source,
           external_id,
@@ -522,6 +700,8 @@ async function runCandidateIntake(env, now = new Date()) {
         ) VALUES (?, ?, ?, ?, ?, 'Not yet assessed', 'candidate', ?, ?, ?, 'Preprint candidate',
           'Machine-found candidate. No editorial verification has occurred.',
           'unreviewed_candidate',
+          'unclassified',
+          'not_assessed',
           'Editorial review is required before this candidate can appear in the public registry.',
           ?, ?, ?, ?, ?)`,
       )
@@ -542,14 +722,6 @@ async function runCandidateIntake(env, now = new Date()) {
         )
         .run();
       added += result.meta?.changes || 0;
-
-      await env.DB.prepare(
-        `UPDATE discoveries
-         SET last_seen_at = ?
-         WHERE source_url = ? AND status = 'candidate'`,
-      )
-        .bind(seenAt, entry.sourceUrl)
-        .run();
     }
 
     await env.DB.prepare(
@@ -612,7 +784,7 @@ async function fetchHandler(request, env) {
     const intakeResponse = await handleIntakeApi(request, env, url);
     if (intakeResponse) return intakeResponse;
   } catch (error) {
-    console.error("Discovery Index request failed", error);
+    console.error("Discovery AI Index request failed", error);
     if (url.pathname.startsWith("/api/")) {
       return json({ error: "The registry is temporarily unavailable." }, { status: 500 });
     }
@@ -652,7 +824,7 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(
       runCandidateIntake(env, new Date(controller.scheduledTime)).catch((error) => {
-        console.error("Scheduled Discovery Index intake failed", error);
+        console.error("Scheduled Discovery AI Index intake failed", error);
       }),
     );
   },

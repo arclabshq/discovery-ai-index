@@ -117,15 +117,16 @@ select:focus-visible {
   transform: translateY(-1px);
 }
 
-.registry-status-bar {
+.breakthrough-ticker {
   min-height: 49px;
   border-bottom: 1px solid #d8d7d2;
   display: flex;
   align-items: center;
+  overflow: hidden;
   background: #f3f1ec;
 }
 
-.registry-status-bar > strong {
+.breakthrough-ticker > strong {
   align-self: stretch;
   display: flex;
   align-items: center;
@@ -139,30 +140,73 @@ select:focus-visible {
   flex: 0 0 auto;
 }
 
-.registry-status-content {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 22px;
-  padding: 0 24px;
-  color: #27354b;
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.4;
+.ticker-window {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
-.registry-status-content > span {
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: discovery-ticker 95s linear infinite;
+  will-change: transform;
+}
+
+.breakthrough-ticker:hover .ticker-track,
+.breakthrough-ticker:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+
+.ticker-group {
+  display: flex;
+  align-items: center;
+  gap: 42px;
+  padding-right: 42px;
+}
+
+.ticker-group a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 9px;
+  color: #27354b;
+  text-decoration: none;
   white-space: nowrap;
 }
 
-.registry-status-content b {
-  color: #102345;
+.ticker-group a:hover em {
+  color: #1556bd;
 }
 
-.status-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.ticker-group span {
+  color: #1556bd;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.ticker-group b {
+  color: #102345;
+  font: 700 14px/1.2 Georgia, "Times New Roman", serif;
+}
+
+.ticker-group em {
+  max-width: 560px;
+  overflow: hidden;
+  color: #536078;
+  font-size: 12px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  transition: color 150ms ease;
+}
+
+.ticker-state {
+  display: block;
+  padding: 0 24px;
+  color: #536078;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .status-count-dot,
@@ -182,8 +226,10 @@ select:focus-visible {
   background: #d86120;
 }
 
-.status-updated {
-  color: #57647b;
+@keyframes discovery-ticker {
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .section-kicker,
@@ -273,15 +319,16 @@ select:focus-visible {
 }
 
 .registry-controls {
-  width: min(260px, 42vw);
+  width: min(720px, 54vw);
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px 15px;
   align-items: end;
 }
 
 .registry-toolbar select {
-  min-width: 210px;
+  width: 100%;
+  min-width: 190px;
   border: 1px solid #aeb9cb;
   border-radius: 0;
   color: #102345;
@@ -547,6 +594,16 @@ select:focus-visible {
   letter-spacing: -0.45px;
 }
 
+.record-type-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #667087;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 8px;
+  font-weight: 850;
+}
+
 .record-link {
   color: #111b2d;
   text-decoration: none;
@@ -656,6 +713,15 @@ select:focus-visible {
   max-width: 100%;
   margin: 0;
   white-space: normal;
+}
+
+.record-evidence small {
+  display: block;
+  margin-top: 9px;
+  color: #667087;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.35;
 }
 
 .evidence-link {
@@ -783,6 +849,12 @@ select:focus-visible {
 
 .record-page-meta > span:first-child {
   color: #1556bd;
+}
+
+.record-page-meta > span:nth-child(2) {
+  padding: 4px 7px;
+  border: 1px solid #b9c6dc;
+  color: #3f4d65;
 }
 
 .record-page-review .record-page-meta > span:first-child {
@@ -1249,6 +1321,38 @@ select:focus-visible {
   margin-bottom: 80px;
 }
 
+.type-explainer {
+  max-width: 1400px;
+  margin: 65px auto 35px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-top: 3px solid #1556bd;
+  border-bottom: 1px solid #b9c6dc;
+}
+
+.type-explainer article {
+  min-height: 190px;
+  padding: 28px 28px 32px;
+  border-right: 1px solid #b9c6dc;
+}
+
+.type-explainer article:last-child {
+  border-right: 0;
+}
+
+.type-explainer h2 {
+  margin: 8px 0 12px;
+  color: #17223a;
+  font: 600 29px/1.05 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.7px;
+}
+
+.type-explainer article > p:last-child {
+  margin: 0;
+  color: #505d72;
+  line-height: 1.55;
+}
+
 .method-steps {
   max-width: 1000px;
   margin: 65px auto 30px;
@@ -1632,6 +1736,7 @@ select:focus-visible {
   .independence-note,
   .method-steps,
   .status-explainer,
+  .type-explainer,
   .method-intro-note,
   .checklist,
   .method-note,
@@ -1670,8 +1775,20 @@ select:focus-visible {
     padding-top: 11px;
   }
 
-  .registry-status-bar > strong {
+  .breakthrough-ticker > strong {
     padding-left: 30px;
+  }
+
+  .type-explainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .type-explainer article:nth-child(even) {
+    border-right: 0;
+  }
+
+  .type-explainer article:not(:last-child) {
+    border-bottom: 1px solid #b9c6dc;
   }
 
   .review-list {
@@ -1747,14 +1864,14 @@ select:focus-visible {
     font-size: 12px;
   }
 
-  .registry-status-bar {
+  .breakthrough-ticker {
     padding: 10px 20px 11px;
     align-items: flex-start;
     flex-direction: column;
     gap: 7px;
   }
 
-  .registry-status-bar > strong {
+  .breakthrough-ticker > strong {
     align-self: auto;
     width: 100%;
     padding: 0;
@@ -1762,17 +1879,18 @@ select:focus-visible {
     background: transparent;
   }
 
-  .registry-status-content {
+  .ticker-window {
     width: 100%;
     min-width: 0;
-    padding: 0;
-    gap: 5px 14px;
-    font-size: 12px;
   }
 
-  .registry-status-content .status-updated {
-    width: 100%;
-    white-space: normal;
+  .ticker-group {
+    gap: 30px;
+    padding-right: 30px;
+  }
+
+  .ticker-group em {
+    max-width: 310px;
   }
 
   .registry-intro,
@@ -1783,6 +1901,7 @@ select:focus-visible {
   .independence-note,
   .method-steps,
   .status-explainer,
+  .type-explainer,
   .method-intro-note,
   .checklist,
   .method-note,
@@ -1828,15 +1947,15 @@ select:focus-visible {
 
   .registry-controls {
     width: 100%;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .registry-toolbar label {
-    grid-column: 1;
+  .registry-controls label:last-child {
+    grid-column: 1 / -1;
   }
 
   .registry-toolbar select {
-    width: min(100%, 260px);
+    min-width: 0;
   }
 
   .status-legend-inline {
@@ -1997,6 +2116,12 @@ select:focus-visible {
   .leaderboard-status-review {
     background: #fff0e5;
     color: #b84a10;
+  }
+
+  .leaderboard-validation {
+    color: #667087;
+    font-size: 9px;
+    font-weight: 750;
   }
 
   .leaderboard-action {
@@ -2225,6 +2350,21 @@ select:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .type-explainer {
+    grid-template-columns: 1fr;
+  }
+
+  .type-explainer article,
+  .type-explainer article:nth-child(2) {
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 1px solid #b9c6dc;
+  }
+
+  .type-explainer article:last-child {
+    border-bottom: 0;
+  }
+
   .method-intro-note {
     margin-bottom: 60px;
   }
@@ -2294,5 +2434,17 @@ select:focus-visible {
 
   .state-rule {
     animation: none;
+  }
+
+  .ticker-track {
+    animation: none;
+  }
+
+  .ticker-window {
+    overflow-x: auto;
+  }
+
+  .ticker-group[aria-hidden="true"] {
+    display: none;
   }
 }

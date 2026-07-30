@@ -90,6 +90,8 @@ test("public registry exposes verified and under-review records but not candidat
     field: "Science",
     ai_system: "System",
     ai_role_plain: "The system proposed candidates that researchers checked.",
+    discovery_type: "design",
+    validation_stage: "lab_confirmed",
     history_start_label: "Conjecture published",
     history_start_date: "2024-05-06",
     history_result_label: "Proof posted",
@@ -121,6 +123,8 @@ test("public registry exposes verified and under-review records but not candidat
     body.verified[0].aiRole,
     "The system proposed candidates that researchers checked.",
   );
+  assert.equal(body.verified[0].discoveryType, "design");
+  assert.equal(body.verified[0].validationStage, "lab_confirmed");
   assert.equal(body.verified[0].updatedAt, "2026-07-24T16:30:00Z");
   assert.deepEqual(body.verified[0].history, {
     startLabel: "Conjecture published",
@@ -150,6 +154,67 @@ test("editorial writes fail closed without a configured token", async () => {
     registryEnv([]),
   );
   assert.equal(response.status, 503);
+});
+
+test("classification rejects unknown taxonomy values", async () => {
+  const response = await worker.fetch(
+    new Request("https://example.test/api/editorial/discoveries/example/classification", {
+      method: "PATCH",
+      headers: {
+        authorization: "Bearer editorial-test",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        discoveryType: "marketing_claim",
+        validationStage: "peer_reviewed",
+        note: "Testing invalid taxonomy.",
+      }),
+    }),
+    { ...registryEnv([]), EDITORIAL_TOKEN: "editorial-test" },
+  );
+
+  assert.equal(response.status, 400);
+});
+
+test("a verified record cannot be reclassified to a weak validation stage", async () => {
+  const response = await worker.fetch(
+    new Request("https://example.test/api/editorial/discoveries/example/classification", {
+      method: "PATCH",
+      headers: {
+        authorization: "Bearer editorial-test",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        discoveryType: "proof",
+        validationStage: "author_checked",
+        note: "Testing weak-stage guard.",
+      }),
+    }),
+    {
+      EDITORIAL_TOKEN: "editorial-test",
+      DB: {
+        prepare() {
+          return {
+            bind() {
+              return {
+                first: async () => ({
+                  id: "example",
+                  status: "verified",
+                  discovery_type: "proof",
+                  validation_stage: "expert_checked",
+                }),
+              };
+            },
+          };
+        },
+      },
+      ASSETS: {
+        fetch: async () => new Response("missing", { status: 404 }),
+      },
+    },
+  );
+
+  assert.equal(response.status, 409);
 });
 
 test("candidate intake parser normalizes primary arXiv links", () => {
@@ -201,4 +266,7 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/.openai/drizzle/0005_research_significance.sql", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0006_reader_first_registry.sql", import.meta.url));
   await access(new URL("../dist/.openai/drizzle/0007_discovery_history.sql", import.meta.url));
+  await access(
+    new URL("../dist/.openai/drizzle/0008_discovery_ai_global_backfill.sql", import.meta.url),
+  );
 });

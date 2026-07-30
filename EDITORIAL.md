@@ -1,4 +1,4 @@
-# Discovery Index editorial operations
+# Discovery AI Index editorial operations
 
 The public registry is intentionally narrower than the database:
 
@@ -6,6 +6,15 @@ The public registry is intentionally narrower than the database:
 - `under_review` — visible as a reported result with its open verification questions.
 - `verified` — published in the registry with a primary source and verification note.
 - `rejected` — private and retained for audit history.
+
+Every record also has two independent editorial classifications:
+
+- `discovery_type` — whether AI helped find, prove, design, translate, or enable the result.
+- `validation_stage` — the strongest documented scientific check, which may be a formal proof,
+  field confirmation, laboratory result, animal study, human trial, or deployment.
+
+Registry status controls publication. Validation stage describes evidence maturity. One never
+automatically determines the other.
 
 ## Publication invariant
 
@@ -33,6 +42,9 @@ A transition request uses a bearer token and a JSON body:
   "aiSystem": "System name",
   "sourceLabel": "arXiv author preprint",
   "sourceType": "Preprint",
+  "evidenceLevel": "preprint_experimental",
+  "discoveryType": "discovery",
+  "validationStage": "author_reported_experimental",
   "whyItMatters": "A scoped explanation of the possible significance.",
   "verificationNote": "The specific evidence and open checks."
 }
@@ -42,6 +54,14 @@ Candidate-to-review transitions require all public editorial fields so raw
 machine-found metadata cannot become visible by accident. Publishing uses
 `status: "verified"` and must include `verificationNote`. The API fails closed
 when the token is absent.
+
+Classification can later be updated without inventing a status transition:
+
+- `PATCH /api/editorial/discoveries/:id/classification`
+
+It requires a valid `discoveryType`, `validationStage`, and non-empty editorial note. The
+change is written to the existing audit log while the record keeps its current publication
+status.
 
 ## Candidate intake
 

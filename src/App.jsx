@@ -10,6 +10,33 @@ const TABLE_STATUS_COPY = {
   under_review: "Pending",
 };
 
+const DISCOVERY_TYPE_LABELS = {
+  discovery: "Discovery",
+  proof: "Proof",
+  design: "Design",
+  translation: "Translation",
+  research_milestone: "Research milestone",
+  unclassified: "Unclassified",
+};
+
+const VALIDATION_STAGE_LABELS = {
+  not_assessed: "Not assessed",
+  primary_source_only: "Primary source only",
+  author_checked: "Author checked",
+  author_reported_experimental: "Author-reported experiment",
+  expert_checked: "Expert checked",
+  formally_verified: "Formally verified",
+  peer_reviewed: "Peer reviewed",
+  statistical_validation: "Statistically validated",
+  field_confirmed: "Field confirmed",
+  lab_confirmed: "Lab confirmed",
+  animal_study: "Animal study",
+  human_cell_study: "Human-cell study",
+  hardware_demonstration: "Hardware demonstration",
+  human_trial: "Human trial",
+  deployed: "Deployed",
+};
+
 const NAV_ITEMS = [
   { href: "/#registry", label: "Discoveries", match: "/" },
   { href: "/method", label: "Method", match: "/method" },
@@ -17,10 +44,10 @@ const NAV_ITEMS = [
 ];
 
 const PAGE_TITLES = {
-  "/": "Discovery Index — See what AI is helping us discover",
-  "/about": "About — Discovery Index",
-  "/method": "Method — Discovery Index",
-  "/how-it-works": "Method — Discovery Index",
+  "/": "Discovery AI Index — The global catalog of AI-enabled discoveries",
+  "/about": "About — Discovery AI Index",
+  "/method": "Method — Discovery AI Index",
+  "/how-it-works": "Method — Discovery AI Index",
 };
 
 function formatDate(value) {
@@ -48,6 +75,14 @@ function formatDateTime(value) {
 
 function yearFromDate(value) {
   return value ? value.slice(0, 4) : "Date pending";
+}
+
+function discoveryTypeLabel(value) {
+  return DISCOVERY_TYPE_LABELS[value] || "Discovery";
+}
+
+function validationStageLabel(value) {
+  return VALIDATION_STAGE_LABELS[value] || "Published evidence";
 }
 
 function DiscoveryHistory({ discovery }) {
@@ -104,9 +139,9 @@ function useMediaQuery(query) {
 function Header({ path }) {
   return (
     <header className="nav">
-      <a className="brand" href="/" aria-label="Discovery Index home">
+      <a className="brand" href="/" aria-label="Discovery AI Index home">
         <span className="brand-mark" />
-        Discovery Index
+        Discovery AI Index
       </a>
       <nav className="primary-nav" aria-label="Primary navigation">
         {NAV_ITEMS.map((item) => (
@@ -127,38 +162,38 @@ function Header({ path }) {
   );
 }
 
-function RegistryStatusBar({ registry, state }) {
-  const verifiedCount = registry.verified.length;
-  const reviewCount = registry.underReview.length;
-  const totalCount = verifiedCount + reviewCount;
+function BreakthroughTicker({ registry, state }) {
+  const discoveries = registry.verified.slice(0, 8);
 
   return (
-    <section className="registry-status-bar" aria-label="Registry status" aria-live="polite">
-      <strong>REGISTRY</strong>
-      <div className="registry-status-content">
-        {state === "ready" ? (
-          <>
-            <span><b>{totalCount}</b> public records</span>
-            <span className="status-count">
-              <i className="status-count-dot verified-dot" aria-hidden="true" />
-              <b>{verifiedCount}</b> verified
-            </span>
-            <span className="status-count">
-              <i className="status-count-dot review-dot" aria-hidden="true" />
-              <b>{reviewCount}</b> verification pending
-            </span>
-            <span className="status-updated">
-              <time dateTime={registry.lastEditorialUpdateAt || undefined}>
-                Last editorial update {formatDateTime(registry.lastEditorialUpdateAt)}
-              </time>
-            </span>
-            <span>Evidence checks are date-stamped</span>
-          </>
+    <section className="breakthrough-ticker" aria-label="Latest verified breakthroughs">
+      <strong>Latest discoveries</strong>
+      <div className="ticker-window">
+        {state === "ready" && discoveries.length ? (
+          <div className="ticker-track">
+            {[0, 1].map((copyIndex) => (
+              <div
+                className="ticker-group"
+                aria-hidden={copyIndex === 1 ? "true" : undefined}
+                key={copyIndex}
+              >
+                {discoveries.map((discovery) => (
+                  <a
+                    href={`/discoveries/${discovery.slug}`}
+                    key={`${copyIndex}-${discovery.id}`}
+                    tabIndex={copyIndex === 1 ? -1 : undefined}
+                  >
+                    <span>{discovery.field} breakthrough</span>
+                    <b>{discovery.aiSystem}</b>
+                    <em>{discovery.summary}</em>
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
         ) : (
-          <span>
-            {state === "error"
-              ? "Registry status temporarily unavailable"
-              : "Opening durable registry…"}
+          <span className="ticker-state">
+            {state === "error" ? "Discovery feed temporarily unavailable" : "Opening discovery feed…"}
           </span>
         )}
       </div>
@@ -254,6 +289,9 @@ function RegistryTable({ discoveries }) {
                   <strong>{discovery.aiSystem}</strong>
                 </td>
                 <td className="record-title" data-label="Breakthrough">
+                  <span className="record-type-label">
+                    {discoveryTypeLabel(discovery.discoveryType)}
+                  </span>
                   <h3>
                     <a
                       className="record-link"
@@ -280,6 +318,7 @@ function RegistryTable({ discoveries }) {
                   >
                     {TABLE_STATUS_COPY[discovery.status]}
                   </a>
+                  <small>{validationStageLabel(discovery.validationStage)}</small>
                 </td>
               </tr>
             );
@@ -324,6 +363,7 @@ function MobileLeaderboard({ discoveries }) {
                 <span className="leaderboard-content">
                   <span className="leaderboard-meta">
                     <span>{discovery.field}</span>
+                    <span>{discoveryTypeLabel(discovery.discoveryType)}</span>
                     <time dateTime={discovery.announcedAt}>
                       {formatDate(discovery.announcedAt)}
                     </time>
@@ -339,6 +379,9 @@ function MobileLeaderboard({ discoveries }) {
                     >
                       {TABLE_STATUS_COPY[discovery.status]}
                     </span>
+                    <span className="leaderboard-validation">
+                      {validationStageLabel(discovery.validationStage)}
+                    </span>
                   </span>
                 </span>
                 <span className="leaderboard-action" aria-hidden="true">View</span>
@@ -353,6 +396,8 @@ function MobileLeaderboard({ discoveries }) {
 
 function HomePage({ registry, state }) {
   const [field, setField] = useState("All fields");
+  const [discoveryType, setDiscoveryType] = useState("All types");
+  const [validationStage, setValidationStage] = useState("All evidence");
   const isMobile = useMediaQuery("(max-width: 760px)");
   const discoveries = useMemo(
     () =>
@@ -365,12 +410,31 @@ function HomePage({ registry, state }) {
     () => ["All fields", ...new Set(discoveries.map((item) => item.field))],
     [discoveries],
   );
+  const discoveryTypes = useMemo(
+    () => [
+      "All types",
+      ...new Set(discoveries.map((item) => item.discoveryType || "unclassified")),
+    ],
+    [discoveries],
+  );
+  const validationStages = useMemo(
+    () => [
+      "All evidence",
+      ...new Set(discoveries.map((item) => item.validationStage || "not_assessed")),
+    ],
+    [discoveries],
+  );
   const filtered = useMemo(
     () =>
-      field === "All fields"
-        ? discoveries
-        : discoveries.filter((item) => item.field === field),
-    [discoveries, field],
+      discoveries.filter(
+        (item) =>
+          (field === "All fields" || item.field === field) &&
+          (discoveryType === "All types" ||
+            (item.discoveryType || "unclassified") === discoveryType) &&
+          (validationStage === "All evidence" ||
+            (item.validationStage || "not_assessed") === validationStage),
+      ),
+    [discoveries, discoveryType, field, validationStage],
   );
   const visibleVerified = filtered.filter((item) => item.status === "verified").length;
   const visibleUnderReview = filtered.length - visibleVerified;
@@ -378,19 +442,23 @@ function HomePage({ registry, state }) {
   return (
     <>
       <section className="registry-intro">
-        <p className="section-kicker">AI-assisted breakthroughs</p>
-        <h1>Real discoveries AI helped make.</h1>
+        <p className="section-kicker">Global discovery catalog</p>
+        <h1>See what AI is helping humanity discover.</h1>
         <p>
-          Explore documented advances in medicine, biology, mathematics, materials, and
-          computing—and see what changed, why it matters, and where the evidence comes from.
+          Explore discoveries across medicine, science, mathematics, and technology—explained
+          simply, traced to the original research, and labeled by how each result was validated.
         </p>
       </section>
 
       <section className="registry-toolbar" id="registry">
         <div>
           <p className="section-kicker">Discovery registry</p>
-          <h2>See what changed—and why it matters.</h2>
-          <p className="registry-deck">Every record links to the original research.</p>
+          <h2>A growing record of new knowledge, designs, and proofs.</h2>
+          <p className="registry-deck">
+            {state === "ready"
+              ? `${filtered.length} shown · ${visibleVerified} verified · ${visibleUnderReview} verification pending.`
+              : "Every record links to the original research."}
+          </p>
         </div>
         <div className="registry-controls">
           <label id="fields">
@@ -398,6 +466,32 @@ function HomePage({ registry, state }) {
             <select value={field} onChange={(event) => setField(event.target.value)}>
               {fields.map((item) => (
                 <option key={item}>{item}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Discovery type
+            <select
+              value={discoveryType}
+              onChange={(event) => setDiscoveryType(event.target.value)}
+            >
+              {discoveryTypes.map((item) => (
+                <option key={item} value={item}>
+                  {item === "All types" ? item : discoveryTypeLabel(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Strongest check
+            <select
+              value={validationStage}
+              onChange={(event) => setValidationStage(event.target.value)}
+            >
+              {validationStages.map((item) => (
+                <option key={item} value={item}>
+                  {item === "All evidence" ? item : validationStageLabel(item)}
+                </option>
               ))}
             </select>
           </label>
@@ -458,6 +552,7 @@ function DiscoveryRecordPage({ discovery, state }) {
       <header className="record-page-hero">
         <div className="record-page-meta">
           <span>{discovery.field}</span>
+          <span>{discoveryTypeLabel(discovery.discoveryType)}</span>
           <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
           <span className={`status ${statusClass}`}>{STATUS_COPY[discovery.status]}</span>
         </div>
@@ -512,6 +607,14 @@ function DiscoveryRecordPage({ discovery, state }) {
           <aside>
             <dl>
               <div>
+                <dt>Discovery type</dt>
+                <dd>{discoveryTypeLabel(discovery.discoveryType)}</dd>
+              </div>
+              <div>
+                <dt>Strongest documented check</dt>
+                <dd>{validationStageLabel(discovery.validationStage)}</dd>
+              </div>
+              <div>
                 <dt>Primary source</dt>
                 <dd>{discovery.sourceLabel || "Original research"}</dd>
               </div>
@@ -562,16 +665,16 @@ function AboutPage() {
     <>
       <PageHero
         kicker="About the index"
-        title="A public record of what AI is helping us discover."
-        deck="Breakthrough headlines are arriving faster than most people can evaluate them. Discovery Index turns specialist research into evidence-backed proof points anyone can understand."
+        title="The global catalog of discoveries materially enabled by AI."
+        deck="Discovery AI Index makes advances across research visible beyond the fields where they happen—without flattening the evidence or overstating what has been proven."
       />
       <section className="editorial-layout">
         <div className="prose">
           <h2>Why this record matters</h2>
           <p>
-            Benchmarks show what a model can do in a test. This registry shows something
-            different: documented moments when AI helped produce a new proof, prediction,
-            algorithm, material candidate, or scientific lead.
+            Benchmarks show what a model can do in a test. This catalog documents what people
+            and AI systems have actually found, proved, designed, or moved into real-world
+            testing.
           </p>
           <p>
             The goal is to make the pace of real discovery visible beyond the fields where it
@@ -609,7 +712,7 @@ function AboutPage() {
           <h2>Maintained with AI-assisted editorial review.</h2>
         </div>
         <p>
-          Discovery Index uses an AI-assisted editorial system to trace primary sources and
+          Discovery AI Index uses an AI-assisted editorial system to trace primary sources and
           document external verification. It does not independently prove claims or represent the
           researchers listed. Status changes are based on published evidence and recorded with an
           editorial note.
@@ -624,9 +727,36 @@ function HowItWorksPage() {
     <>
       <PageHero
         kicker="Method"
-        title="Two statuses. One evidence trail."
-        deck="Orange means independent evidence is still missing. Blue means external verification is documented. Every public record links to the original research."
+        title="What was discovered—and how far it has been checked."
+        deck="Every record separates the kind of contribution from its evidence maturity, then links directly to the original research."
       />
+      <section className="type-explainer" aria-label="Discovery types">
+        <article>
+          <p className="section-kicker">Discovery</p>
+          <h2>Found</h2>
+          <p>A previously unknown object, pattern, molecule, mechanism, or hypothesis.</p>
+        </article>
+        <article>
+          <p className="section-kicker">Proof</p>
+          <h2>Proved</h2>
+          <p>A new theorem, construction, algorithm, formula, or explanatory relationship.</p>
+        </article>
+        <article>
+          <p className="section-kicker">Design</p>
+          <h2>Designed</h2>
+          <p>A new protein, gene editor, material, molecule, or engineered system.</p>
+        </article>
+        <article>
+          <p className="section-kicker">Translation</p>
+          <h2>Tested</h2>
+          <p>An AI-originated result that reached deployment, animal studies, or human trials.</p>
+        </article>
+        <article>
+          <p className="section-kicker">Research milestone</p>
+          <h2>Enabled</h2>
+          <p>A new research capability demonstrated in a blind test, laboratory, or physical system.</p>
+        </article>
+      </section>
       <section className="status-explainer status-legend public-statuses">
         <article>
           <span className="status-dot review-dot" />
@@ -643,8 +773,9 @@ function HowItWorksPage() {
           <p className="section-kicker">Blue · verified</p>
           <h2>External verification documented.</h2>
           <p>
-            The record documents what changed, how AI contributed, the strongest independent
-            check, and any material limitation that remains.
+            The record documents what changed, how AI contributed, the strongest completed
+            check—from formal proof to field confirmation or human trial—and any material
+            limitation that remains.
           </p>
         </article>
       </section>
@@ -696,8 +827,8 @@ function Footer({ lastEditorialUpdateAt }) {
   return (
     <footer className="site-footer">
       <div className="footer-brand">
-        <span>Discovery Index</span>
-        <span>Real discoveries, explained clearly.</span>
+        <span>Discovery AI Index</span>
+        <span>The global catalog of discoveries materially enabled by AI.</span>
       </div>
       <nav className="footer-links" aria-label="Footer navigation">
         <a href="/">Discoveries</a>
@@ -730,10 +861,10 @@ export function App() {
 
   useEffect(() => {
     document.title = selectedDiscovery
-      ? `${selectedDiscovery.title} — Discovery Index`
+      ? `${selectedDiscovery.title} — Discovery AI Index`
       : recordSlug
-        ? "Discovery record — Discovery Index"
-        : PAGE_TITLES[path] || "Page not found — Discovery Index";
+        ? "Discovery record — Discovery AI Index"
+        : PAGE_TITLES[path] || "Page not found — Discovery AI Index";
   }, [path, recordSlug, selectedDiscovery]);
 
   useEffect(() => {
@@ -770,7 +901,7 @@ export function App() {
   return (
     <main className="page">
       <Header path={path} />
-      <RegistryStatusBar registry={registry} state={state} />
+      <BreakthroughTicker registry={registry} state={state} />
       {content}
       <Footer lastEditorialUpdateAt={registry.lastEditorialUpdateAt} />
     </main>
