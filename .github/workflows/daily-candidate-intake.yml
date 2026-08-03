@@ -1,0 +1,65 @@
+name: Daily candidate intake
+
+on:
+  schedule:
+    - cron: "17 10 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: discovery-ai-index-candidate-intake
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger candidate-only source scan
+        shell: bash
+        env:
+          INTAKE_URL: https://discovery-index.alexreeder.chatgpt.site/api/intake/run
+          INTAKE_TOKEN: ${{ secrets.DISCOVERY_AI_INTAKE_TOKEN }}
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          if [[ -z "${INTAKE_TOKEN}" ]]; then
+            echo "::error::DISCOVERY_AI_INTAKE_TOKEN is not configured."
+            exit 1
+          fi
+
+          status_code="$(curl \
+            --silent \
+            --show-error \
+            --output "$response_file" \
+            --write-out "%{http_code}" \
+            --request POST \
+            --retry 2 \
+            --retry-all-errors \
+            --max-time 120 \
+            --header "Authorization: Bearer ${INTAKE_TOKEN}" \
+            "$INTAKE_URL")"
+
+          if (( status_code < 200 || status_code >= 300 )); then
+            echo "::error::Candidate intake returned HTTP ${status_code}."
+            exit 1
+          fi
+
+          node --input-type=module - "$response_file" <<'NODE'
+          import { readFileSync } from "node:fs";
+
+          const result = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          if (!["completed", "skipped"].includes(result.status)) {
+            throw new Error(`Unexpected intake status: ${String(result.status)}`);
+          }
+          if (result.mode !== "candidate_only" || result.publicRecordsChanged !== 0) {
+            throw new Error("The intake endpoint did not confirm the candidate-only policy.");
+          }
+          console.log(
+            `Candidate intake ${result.status}: ${result.candidatesSeen ?? 0} seen, ` +
+              `${result.candidatesAdded ?? 0} added, 0 public records changed.`,
+          );
+          NODE
