@@ -1,0 +1,78 @@
+INSERT OR REPLACE INTO discoveries (
+  id,
+  slug,
+  title,
+  summary,
+  field,
+  ai_system,
+  status,
+  announced_at,
+  verified_at,
+  source_url,
+  source_label,
+  source_type,
+  verification_note,
+  evidence_level,
+  why_it_matters,
+  review_started_at,
+  published_at,
+  updated_at
+) VALUES
+  (
+    'disc-openai-unit-distance',
+    'openai-unit-distance-conjecture',
+    'OpenAI model overturns a long-standing unit-distance conjecture',
+    'A general-purpose reasoning model constructed an infinite family of point configurations that beat the long-believed limit for the number of unit-distance pairs in the plane. The proof links discrete geometry with tools from algebraic number theory.',
+    'Mathematics',
+    'OpenAI general-purpose reasoning model',
+    'verified',
+    '2026-05-20',
+    '2026-05-20',
+    'https://cdn.openai.com/pdf/74c24085-19b0-4534-9c90-465b8e29ad73/unit-distance-proof.pdf',
+    'OpenAI unit-distance proof',
+    'Expert-checked proof package',
+    'The complete proof was released publicly and checked by a group of external mathematicians, who also published a companion paper explaining the argument and its significance.',
+    'externally_checked_proof',
+    'The result resolves a prominent conjecture around a problem posed by Paul Erdős in 1946 and introduces an unexpected number-theoretic construction.',
+    '2026-05-20',
+    '2026-05-20',
+    CURRENT_TIMESTAMP
+  ),
+  (
+    'review-chatgpt-sun-conjecture',
+    'chatgpt-sun-determinant-conjecture',
+    'ChatGPT produces a proof of a number-theory determinant conjecture',
+    'ChatGPT produced a proof of Zhi-Wei Sun’s conjecture about a truncated Legendre-symbol determinant. The paper’s three authors say they independently checked and confirmed the argument.',
+    'Mathematics',
+    'ChatGPT',
+    'under_review',
+    '2026-06-21',
+    NULL,
+    'https://arxiv.org/abs/2606.22548',
+    'arXiv author preprint',
+    'Author-checked preprint',
+    'The authors report independently checking every step, but the record is a first-version preprint and this registry has not recorded journal peer review or an independent verification report.',
+    'preprint_author_checked',
+    'It is a direct, documented example of ChatGPT generating the core proof rather than only editing or explaining human work.',
+    '2026-06-21',
+    NULL,
+    CURRENT_TIMESTAMP
+  );
+
+INSERT OR IGNORE INTO editorial_events (
+  id,
+  discovery_id,
+  from_status,
+  to_status,
+  note,
+  actor,
+  created_at
+) VALUES (
+  'seed-disc-openai-unit-distance',
+  'disc-openai-unit-distance',
+  'under_review',
+  'verified',
+  'The released proof was checked by external mathematicians and accompanied by their explanatory paper.',
+  'editorial research',
+  '2026-05-20'
+);

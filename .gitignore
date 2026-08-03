@@ -1,0 +1,20 @@
+node_modules/
+dist/
+coverage/
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+
+# Local visual-QA artifacts are useful during design work but are not product source.
+qa/
+qa-*.html
+design-qa.md
+implementation.png
+
+# Superseded or unused generated artwork.
+public/og-v*.png
+public/assets/hero-geometry.png
