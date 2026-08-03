@@ -71,6 +71,15 @@ const ARXIV_SOURCE_KEY = "arxiv-discovery-scan";
 const ARXIV_ENDPOINT = "https://export.arxiv.org/api/query";
 const DEFAULT_LOOKBACK_DAYS = 14;
 const DEFAULT_MAX_RESULTS = 12;
+const INTAKE_RUN_TIMEOUT_MINUTES = 30;
+
+function candidateOnlyResult(result) {
+  return {
+    ...result,
+    mode: "candidate_only",
+    publicRecordsChanged: 0,
+  };
+}
 
 function json(data, init = {}) {
   const headers = new Headers(init.headers);
@@ -626,17 +635,43 @@ function candidateSlug(externalId) {
 
 async function runCandidateIntake(env, now = new Date()) {
   if (env.INTAKE_ENABLED !== "true") {
-    return { status: "disabled", candidatesSeen: 0, candidatesAdded: 0 };
+    return candidateOnlyResult({ status: "disabled", candidatesSeen: 0, candidatesAdded: 0 });
   }
 
   const runId = crypto.randomUUID();
   const startedAt = now.toISOString();
+  const staleBefore = new Date(
+    now.getTime() - INTAKE_RUN_TIMEOUT_MINUTES * 60 * 1000,
+  ).toISOString();
+
   await env.DB.prepare(
-    `INSERT INTO intake_runs (id, source_key, started_at, status)
+    `UPDATE intake_runs
+     SET finished_at = ?, status = 'failed', error_message = ?
+     WHERE source_key = ? AND status = 'running' AND started_at < ?`,
+  )
+    .bind(
+      startedAt,
+      `Automatically closed after ${INTAKE_RUN_TIMEOUT_MINUTES} minutes without completion.`,
+      ARXIV_SOURCE_KEY,
+      staleBefore,
+    )
+    .run();
+
+  const lease = await env.DB.prepare(
+    `INSERT OR IGNORE INTO intake_runs (id, source_key, started_at, status)
      VALUES (?, ?, ?, 'running')`,
   )
     .bind(runId, ARXIV_SOURCE_KEY, startedAt)
     .run();
+
+  if (lease.meta?.changes !== 1) {
+    return candidateOnlyResult({
+      status: "skipped",
+      reason: "source_scan_already_running",
+      candidatesSeen: 0,
+      candidatesAdded: 0,
+    });
+  }
 
   try {
     const response = await fetch(buildArxivUrl(now, env), {
@@ -732,12 +767,12 @@ async function runCandidateIntake(env, now = new Date()) {
       .bind(seenAt, candidates.length, added, runId)
       .run();
 
-    return {
+    return candidateOnlyResult({
       status: "completed",
       runId,
       candidatesSeen: candidates.length,
       candidatesAdded: added,
-    };
+    });
   } catch (error) {
     await env.DB.prepare(
       `UPDATE intake_runs

@@ -1,19 +1,30 @@
 {
-  "name": "discovery-index",
-  "version": "0.0.0",
+  "name": "discovery-ai-index",
+  "version": "1.0.0",
+  "description": "An evidence-first, human-reviewed catalog of discoveries materially enabled by AI.",
+  "homepage": "https://discovery-index.alexreeder.chatgpt.site",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arclabshq/discovery-ai-index.git"
+  },
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/prepare-sites-build.mjs",
     "preview": "vite preview",
-    "test:sites": "node --test tests/sites-worker.test.mjs"
+    "test": "npm run test:sites",
+    "test:sites": "node --test tests/sites-worker.test.mjs",
+    "check": "npm run build && npm run test:sites"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.0.4",
-    "vite": "6.4.2",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "vite": "6.4.3"
   },
-  "devDependencies": {}
+  "engines": {
+    "node": ">=20"
+  }
 }

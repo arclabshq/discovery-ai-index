@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { access } from "node:fs/promises";
 import test from "node:test";
-import worker, { buildArxivUrl, parseArxivEntries } from "../worker/index.js";
+import worker, {
+  buildArxivUrl,
+  parseArxivEntries,
+  runCandidateIntake,
+} from "../worker/index.js";
 
 function registryEnv(rows) {
   return {
@@ -253,6 +257,50 @@ test("scheduled intake query is bounded by date and result count", () => {
   assert.match(url.searchParams.get("search_query"), /20260716120000 TO 20260723120000/);
 });
 
+test("candidate intake is safe-off and reports that public records cannot change", async () => {
+  const response = await runCandidateIntake({ INTAKE_ENABLED: "false" });
+  assert.deepEqual(response, {
+    mode: "candidate_only",
+    publicRecordsChanged: 0,
+    status: "disabled",
+    candidatesSeen: 0,
+    candidatesAdded: 0,
+  });
+});
+
+test("candidate intake skips an overlapping source scan", async () => {
+  const statements = [];
+  const env = {
+    INTAKE_ENABLED: "true",
+    DB: {
+      prepare(sql) {
+        statements.push(sql);
+        return {
+          bind() {
+            return {
+              run: async () => ({
+                meta: { changes: sql.includes("INSERT OR IGNORE INTO intake_runs") ? 0 : 1 },
+              }),
+            };
+          },
+        };
+      },
+    },
+  };
+
+  const response = await runCandidateIntake(env, new Date("2026-08-02T10:17:00Z"));
+  assert.deepEqual(response, {
+    mode: "candidate_only",
+    publicRecordsChanged: 0,
+    status: "skipped",
+    reason: "source_scan_already_running",
+    candidatesSeen: 0,
+    candidatesAdded: 0,
+  });
+  assert.equal(statements.some((sql) => sql.includes("UPDATE intake_runs")), true);
+  assert.equal(statements.some((sql) => sql.includes("INSERT OR IGNORE INTO intake_runs")), true);
+});
+
 test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/client/index.html", import.meta.url));
   await access(new URL("../dist/client/about/index.html", import.meta.url));
@@ -268,5 +316,8 @@ test("emits the files required by Sites packaging", async () => {
   await access(new URL("../dist/.openai/drizzle/0007_discovery_history.sql", import.meta.url));
   await access(
     new URL("../dist/.openai/drizzle/0008_discovery_ai_global_backfill.sql", import.meta.url),
+  );
+  await access(
+    new URL("../dist/.openai/drizzle/0009_intake_concurrency_guard.sql", import.meta.url),
   );
 });

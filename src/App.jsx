@@ -791,16 +791,17 @@ function HowItWorksPage() {
         </ul>
       </section>
       <p className="method-intro-note">
-        No scan, model, or submission can publish a record or change its status automatically.
+        A daily source scan can add private candidates for editors to inspect. No scan, model, or
+        submission can publish a record or change its status automatically.
       </p>
       <section className="method-policies">
         <article>
           <p className="section-kicker">Update cadence</p>
           <h2>Evidence checks are date-stamped.</h2>
           <p>
-            Pending records are rechecked for new paper versions, peer review, independent expert
-            reports, formal checks, replications, corrections, and retractions. A scan alone never
-            changes a public status.
+            The automated scan looks for new candidate discoveries. Editors separately recheck
+            pending records for paper revisions, peer review, formal checks, replications,
+            corrections, and retractions. A scan alone never changes a public record.
           </p>
         </article>
         <article>

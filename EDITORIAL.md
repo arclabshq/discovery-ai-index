@@ -76,10 +76,16 @@ The initial scanner:
 4. Inserts only `candidate` records.
 5. Preserves reviewed or verified records on duplicate URLs.
 6. Logs every run and failure in `intake_runs`.
+7. Allows only one active run per source and safely skips overlapping triggers.
 
 Set `INTAKE_ENABLED=true` only when a production schedule is attached. Set
 `INTAKE_TOKEN` as a secret if the manual scheduler hook is used. The default is
 safe-off; a source outage never changes published records.
+
+The production GitHub workflow is a thin trigger with no repository permissions. It receives no editorial,
+repository-write, migration, or deployment credential. It cannot edit this application or make a
+candidate public. The initial scanner covers recent arXiv candidates only; expanding its approved
+sources or changing its rules requires a reviewed code change.
 
 ## Review checklist
 
