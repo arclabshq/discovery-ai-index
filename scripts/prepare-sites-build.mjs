@@ -35,4 +35,19 @@ for (const migration of readdirSync(migrations).filter((file) => file.endsWith("
   copyFileSync(path.join(migrations, migration), path.join(drizzle, migration));
 }
 
+function findConflictCopies(directory) {
+  const conflicts = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) conflicts.push(...findConflictCopies(entryPath));
+    if (entry.isFile() && / \d+\.[^.]+$/.test(entry.name)) conflicts.push(entryPath);
+  }
+  return conflicts;
+}
+
+const conflictCopies = findConflictCopies(dist);
+if (conflictCopies.length) {
+  throw new Error(`Refusing to package duplicate conflict copies: ${conflictCopies.join(", ")}`);
+}
+
 console.log("Prepared Sites build with app routes, worker, hosting metadata, and D1 migrations");
