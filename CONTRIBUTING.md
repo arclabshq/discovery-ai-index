@@ -25,4 +25,5 @@ Link to third-party research instead of copying it into the repository.
 
 Pull requests never receive production secrets, write to the live D1 database, deploy the site, or
 change a discovery's public status. Schema, taxonomy, publishing rules, security controls, and
-automation permissions require explicit human review.
+automation permissions require explicit human review. Routine discovery updates belong in the
+structured API workflow.

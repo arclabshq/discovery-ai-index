@@ -60,6 +60,20 @@ const WEAK_VERIFIED_STAGES = new Set([
   "author_checked",
   "author_reported_experimental",
 ]);
+const AUTOMATION_UPDATE_FIELDS = [
+  "title",
+  "summary",
+  "field",
+  "aiSystem",
+  "sourceLabel",
+  "sourceType",
+  "evidenceLevel",
+  "discoveryType",
+  "validationStage",
+  "whyItMatters",
+  "aiRole",
+  "verificationNote",
+];
 const TRANSITIONS = {
   candidate: new Set(["under_review", "rejected"]),
   under_review: new Set(["verified", "rejected"]),
@@ -177,7 +191,7 @@ async function handlePublicApi(request, env, url) {
       underReview,
       policy: {
         candidateVisibility: "editorial_only",
-        publishing: "human_review_required",
+        publishing: "authenticated_review_required",
       },
       lastEditorialUpdateAt,
       generatedAt: new Date().toISOString(),
@@ -213,21 +227,27 @@ async function readJson(request) {
   return request.json();
 }
 
-async function handleEditorialApi(request, env, url) {
-  if (!url.pathname.startsWith("/api/editorial/")) return null;
+async function handleEditorialApi(request, env, url, { automation = false } = {}) {
+  const routePrefix = automation ? "/api/automation" : "/api/editorial";
+  if (!url.pathname.startsWith(`${routePrefix}/`)) return null;
 
-  if (!authorized(request, env.EDITORIAL_TOKEN)) {
+  const expectedToken = automation ? env.AUTOMATION_TOKEN : env.EDITORIAL_TOKEN;
+  const actor = automation ? "luna-max-automation" : "authenticated editor";
+
+  if (!authorized(request, expectedToken)) {
     return privateJson(
       {
-        error: env.EDITORIAL_TOKEN
-          ? "Editorial authorization is required."
-          : "Editorial writes are disabled until EDITORIAL_TOKEN is configured.",
+        error: expectedToken
+          ? `${automation ? "Automation" : "Editorial"} authorization is required.`
+          : `${automation ? "Automation writes" : "Editorial writes"} are disabled until ${
+              automation ? "AUTOMATION_TOKEN" : "EDITORIAL_TOKEN"
+            } is configured.`,
       },
-      { status: env.EDITORIAL_TOKEN ? 401 : 503 },
+      { status: expectedToken ? 401 : 503 },
     );
   }
 
-  if (url.pathname === "/api/editorial/queue" && request.method === "GET") {
+  if (url.pathname === `${routePrefix}/queue` && request.method === "GET") {
     const { results = [] } = await env.DB.prepare(
       `SELECT ${PUBLIC_FIELDS}, intake_source, external_id, last_seen_at, created_at
        FROM discoveries
@@ -241,7 +261,9 @@ async function handleEditorialApi(request, env, url) {
   }
 
   const classificationMatch = url.pathname.match(
-    /^\/api\/editorial\/discoveries\/([^/]+)\/classification$/,
+    automation
+      ? /^\/api\/automation\/discoveries\/([^/]+)\/classification$/
+      : /^\/api\/editorial\/discoveries\/([^/]+)\/classification$/,
   );
   if (classificationMatch && request.method === "PATCH") {
     let payload;
@@ -306,7 +328,7 @@ async function handleEditorialApi(request, env, url) {
       current.status,
       current.status,
       `${note} Classification changed from ${current.discovery_type}/${current.validation_stage} to ${discoveryType}/${validationStage}.`,
-      "authenticated editor",
+      actor,
       now,
     );
 
@@ -321,9 +343,11 @@ async function handleEditorialApi(request, env, url) {
   }
 
   const transitionMatch = url.pathname.match(
-    /^\/api\/editorial\/discoveries\/([^/]+)\/transition$/,
+    automation
+      ? /^\/api\/automation\/discoveries\/([^/]+)\/transition$/
+      : /^\/api\/editorial\/discoveries\/([^/]+)\/transition$/,
   );
-  if (transitionMatch && request.method === "POST") {
+  if (transitionMatch && ["POST", "PATCH"].includes(request.method)) {
     let payload;
     try {
       payload = await readJson(request);
@@ -331,11 +355,11 @@ async function handleEditorialApi(request, env, url) {
       return privateJson({ error: error.message }, { status: 400 });
     }
 
-    const nextStatus = payload.status;
+    const sameStatusUpdate = request.method === "PATCH";
     const note = typeof payload.note === "string" ? payload.note.trim() : "";
-    if (!EDITORIAL_STATUSES.has(nextStatus) || !note) {
+    if (!note) {
       return privateJson(
-        { error: "A valid status and non-empty editorial note are required." },
+        { error: "A non-empty editorial note is required." },
         { status: 400 },
       );
     }
@@ -364,7 +388,42 @@ async function handleEditorialApi(request, env, url) {
       .first();
 
     if (!current) return privateJson({ error: "Discovery not found." }, { status: 404 });
-    if (!TRANSITIONS[current.status]?.has(nextStatus)) {
+
+    if (sameStatusUpdate) {
+      if (!automation) {
+        return privateJson(
+          { error: "Same-status updates are available only to the automation route." },
+          { status: 405 },
+        );
+      }
+      if (current.status !== "under_review") {
+        return privateJson(
+          { error: "Automation may update an existing record only while it is under review." },
+          { status: 409 },
+        );
+      }
+      if (payload.status && payload.status !== current.status) {
+        return privateJson(
+          { error: "A same-status update cannot change the record status." },
+          { status: 400 },
+        );
+      }
+      if (!AUTOMATION_UPDATE_FIELDS.some((field) => typeof payload[field] === "string")) {
+        return privateJson(
+          { error: "A same-status update must include at least one editorial field." },
+          { status: 400 },
+        );
+      }
+    }
+
+    const nextStatus = sameStatusUpdate ? current.status : payload.status;
+    if (!EDITORIAL_STATUSES.has(nextStatus)) {
+      return privateJson(
+        { error: "A valid status and non-empty editorial note are required." },
+        { status: 400 },
+      );
+    }
+    if (!sameStatusUpdate && !TRANSITIONS[current.status]?.has(nextStatus)) {
       return privateJson(
         { error: `Transition from ${current.status} to ${nextStatus} is not allowed.` },
         { status: 409 },
@@ -518,7 +577,7 @@ async function handleEditorialApi(request, env, url) {
       current.status,
       nextStatus,
       note,
-      "authenticated editor",
+      actor,
       now,
     );
 
@@ -812,6 +871,9 @@ async function fetchHandler(request, env) {
   try {
     const publicResponse = await handlePublicApi(request, env, url);
     if (publicResponse) return publicResponse;
+
+    const automationResponse = await handleEditorialApi(request, env, url, { automation: true });
+    if (automationResponse) return automationResponse;
 
     const editorialResponse = await handleEditorialApi(request, env, url);
     if (editorialResponse) return editorialResponse;

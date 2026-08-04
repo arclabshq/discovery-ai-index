@@ -7,6 +7,10 @@ bypasses, or unpublished candidate data.
 Supported code is the current `main` branch and the version deployed at
 <https://discovery-index.alexreeder.chatgpt.site>.
 
-The application is designed to fail closed: intake and editorial writes require separate tokens;
-private candidates are excluded from public APIs; and automated intake cannot publish, delete, or
-change a public record.
+The application is designed to fail closed: intake, human editorial writes, and Luna Max automation
+use separate tokens; private candidates are excluded from public APIs; and automated intake cannot
+publish, delete, or bypass the editorial workflow.
+
+`AUTOMATION_TOKEN` is a production secret for structured data transitions only. The local Codex
+automation reads its copy from the macOS keychain through `scripts/luna-automation.mjs`; it is not
+stored in Git, the site bundle, or the model prompt.

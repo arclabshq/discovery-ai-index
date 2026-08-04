@@ -1,8 +1,8 @@
 # Discovery AI Index
 
-[Discovery AI Index](https://discovery-index.alexreeder.chatgpt.site) is an evidence-first,
-human-reviewed catalog of discoveries materially enabled by AI. It explains what changed, why the
-result matters, how AI contributed, and the strongest evidence available.
+[Discovery AI Index](https://discovery-index.alexreeder.chatgpt.site) is an evidence-first catalog of
+discoveries materially enabled by AI. It explains what changed, why the result matters, how AI
+contributed, and the strongest evidence available.
 
 This repository is the public source for the application, data model, tests, and editorial rules.
 It is intentionally **not** a self-editing website.
@@ -12,8 +12,10 @@ It is intentionally **not** a self-editing website.
 The application has two separate paths:
 
 1. A daily scanner can search approved sources and add or refresh **private candidates** in D1.
-2. A human editor must review the primary evidence and explicitly move a record into public review
-   or verified status.
+2. A separately authenticated Luna Max automation can assess candidates and move structured records
+   through the same evidence and transition rules as an editor.
+3. A human editor remains available as an override; neither automation path can edit application
+   code, schema, taxonomy, thresholds, or deployment configuration.
 
 The scanner cannot publish a record, change a public status, delete a record, edit this repository,
 deploy the site, alter the schema or taxonomy, or change editorial thresholds. The scheduled
@@ -26,7 +28,7 @@ Daily GitHub trigger
 Protected intake endpoint -> bounded source scan -> private D1 candidates + run log
                                                         |
                                                         v
-                                                human editorial review
+                                      authenticated editorial review
                                                         |
                                                         v
                                           under review / verified registry
@@ -73,6 +75,7 @@ migrations under `dist/.openai/drizzle/`.
 | `INTAKE_MAX_RESULTS` | Per-run source cap, clamped to 1–25 | `12` |
 | `INTAKE_TOKEN` | Bearer token for the protected intake endpoint | unset / fail closed |
 | `EDITORIAL_TOKEN` | Separate bearer token for editorial review routes | unset / fail closed |
+| `AUTOMATION_TOKEN` | Separate bearer token for the Luna Max structured-data route | unset / fail closed |
 
 Secrets belong in Sites environment variables and GitHub Actions secrets, never in Git. Forks must
 replace the Sites project identifier in `.openai/hosting.json` with their own project.
@@ -93,6 +96,21 @@ curl --fail-with-body --request POST \
 
 Every run is bounded, deduplicated, logged in `intake_runs`, and protected against overlap. A source
 failure leaves every public record unchanged. Candidate records are excluded from all public APIs.
+
+## Daily Luna Max assessment
+
+The Codex automation named **Discovery AI Index — daily Luna Max pass** runs locally each morning
+using the existing Codex plan allowance. It reads the private queue through the protected
+`/api/automation/queue` route and applies only validated JSON updates through the protected
+`/api/automation/discoveries/:id/transition` route. The helper at
+[`scripts/luna-automation.mjs`](scripts/luna-automation.mjs) keeps the production token in the
+local macOS keychain rather than in the repository or the model prompt.
+
+The automation may move a candidate to `under_review`, move an under-review record to `verified` or
+`rejected` when the existing evidence rules permit it, and update an under-review record in place.
+Every change writes an append-only `editorial_events` row with actor `luna-max-automation`. It cannot
+change a verified record in place, bypass a transition, publish without a verification note, or
+edit code, migrations, schema, editorial rules, or deployment configuration.
 
 ## Data and editorial workflow
 

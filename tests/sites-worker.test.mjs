@@ -122,7 +122,7 @@ test("public registry exposes verified and under-review records but not candidat
     [...body.verified, ...body.underReview].some((item) => item.id === "candidate"),
     false,
   );
-  assert.equal(body.policy.publishing, "human_review_required");
+  assert.equal(body.policy.publishing, "authenticated_review_required");
   assert.equal(
     body.verified[0].aiRole,
     "The system proposed candidates that researchers checked.",
@@ -158,6 +158,105 @@ test("editorial writes fail closed without a configured token", async () => {
     registryEnv([]),
   );
   assert.equal(response.status, 503);
+});
+
+test("automation writes fail closed without a configured token", async () => {
+  const response = await worker.fetch(
+    new Request("https://example.test/api/automation/queue", {
+      headers: { authorization: "Bearer automation-test" },
+    }),
+    registryEnv([]),
+  );
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /AUTOMATION_TOKEN/);
+});
+
+test("automation queue uses its separate bearer token", async () => {
+  const response = await worker.fetch(
+    new Request("https://example.test/api/automation/queue", {
+      headers: { authorization: "Bearer automation-test" },
+    }),
+    {
+      AUTOMATION_TOKEN: "automation-test",
+      DB: {
+        prepare() {
+          return {
+            all: async () => ({
+              results: [
+                {
+                  id: "candidate-1",
+                  status: "candidate",
+                  title: "Candidate",
+                },
+              ],
+            }),
+          };
+        },
+      },
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).discoveries, [
+    { id: "candidate-1", status: "candidate", title: "Candidate" },
+  ]);
+});
+
+test("automation can update an under-review record without changing its status", async () => {
+  const prepared = [];
+  const current = {
+    id: "review-1",
+    status: "under_review",
+    title: "Review title",
+    summary: "Old summary",
+    field: "Science",
+    ai_system: "Luna",
+    source_label: "Primary paper",
+    source_type: "Preprint",
+    verification_note: "Open checks remain.",
+    evidence_level: "preprint_experimental",
+    discovery_type: "discovery",
+    validation_stage: "author_reported_experimental",
+    why_it_matters: "Old significance.",
+    ai_role_plain: "Old role.",
+  };
+  const response = await worker.fetch(
+    new Request("https://example.test/api/automation/discoveries/review-1/transition", {
+      method: "PATCH",
+      headers: {
+        authorization: "Bearer automation-test",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        note: "Primary source was rechecked; the summary is clearer.",
+        summary: "New plain-language summary.",
+      }),
+    }),
+    {
+      AUTOMATION_TOKEN: "automation-test",
+      DB: {
+        prepare(sql) {
+          return {
+            bind(...args) {
+              prepared.push({ sql, args });
+              return {
+                first: async () => (sql.includes("SELECT") ? current : undefined),
+              };
+            },
+          };
+        },
+        batch: async () => [{ meta: { changes: 1 } }, { meta: { changes: 1 } }],
+      },
+    },
+  );
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.status, "under_review");
+  assert.equal(
+    prepared.some(({ args }) => args.includes("luna-max-automation")),
+    true,
+  );
 });
 
 test("classification rejects unknown taxonomy values", async () => {

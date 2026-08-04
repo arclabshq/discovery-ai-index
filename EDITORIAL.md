@@ -19,9 +19,9 @@ automatically determines the other.
 ## Publication invariant
 
 Candidate intake can only insert `candidate` records. A candidate must move to
-`under_review` before an authenticated editor can move it to `verified`. Every
-transition writes an `editorial_events` audit row, and publication requires a
-non-empty verification note.
+`under_review` before an authenticated editor or the separately authenticated Luna Max automation
+can move it to `verified`. Every transition writes an `editorial_events` audit row, and publication
+requires a non-empty verification note plus a non-weak validation stage.
 
 ## Protected editorial API
 
@@ -29,6 +29,7 @@ Configure `EDITORIAL_TOKEN` as a secret runtime value before using these routes:
 
 - `GET /api/editorial/queue`
 - `POST /api/editorial/discoveries/:id/transition`
+- `PATCH /api/editorial/discoveries/:id/classification`
 
 A transition request uses a bearer token and a JSON body:
 
@@ -62,6 +63,20 @@ Classification can later be updated without inventing a status transition:
 It requires a valid `discoveryType`, `validationStage`, and non-empty editorial note. The
 change is written to the existing audit log while the record keeps its current publication
 status.
+
+## Luna Max automation API
+
+The daily Codex automation uses a separate `AUTOMATION_TOKEN`; it never reuses a human editor
+credential. It calls:
+
+- `GET /api/automation/queue`
+- `POST /api/automation/discoveries/:id/transition`
+- `PATCH /api/automation/discoveries/:id/transition` for an under-review record that remains under review
+- `PATCH /api/automation/discoveries/:id/classification`
+
+The route shares the same allow-list, required fields, evidence-stage guard, and append-only audit
+event behavior as the editorial API. Automation can update structured D1 data only. It cannot edit
+the application, migrations, schema, taxonomy, thresholds, workflow permissions, or deployment.
 
 ## Candidate intake
 
