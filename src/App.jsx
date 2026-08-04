@@ -714,8 +714,8 @@ function AboutPage() {
         <p>
           Discovery AI Index uses an AI-assisted editorial system to trace primary sources and
           document external verification. It does not independently prove claims or represent the
-          researchers listed. Status changes are based on published evidence and recorded with an
-          editorial note.
+          researchers listed. Status changes are based on published evidence, constrained by explicit
+          transition rules, and recorded with an editorial note.
         </p>
       </section>
     </>
@@ -791,23 +791,23 @@ function HowItWorksPage() {
         </ul>
       </section>
       <p className="method-intro-note">
-        A daily source scan can add private candidates for editors to inspect. No scan, model, or
-        submission can publish a record or change its status automatically.
+        A daily source scan can add private candidates. Luna Max then assesses the queue using the
+        same evidence rules, while the site remains protected from code, schema, and deployment edits.
       </p>
       <section className="method-policies">
         <article>
           <p className="section-kicker">Update cadence</p>
           <h2>Evidence checks are date-stamped.</h2>
           <p>
-            The automated scan looks for new candidate discoveries. Editors separately recheck
-            pending records for paper revisions, peer review, formal checks, replications,
-            corrections, and retractions. A scan alone never changes a public record.
+            The automated scan looks for new candidate discoveries, and Luna Max rechecks pending
+            records for paper revisions, peer review, formal checks, replications, corrections, and
+            retractions. Every status or content change is written to the audit trail.
           </p>
         </article>
         <article>
           <p className="section-kicker">Corrections</p>
           <h2>The evidence trail stays intact.</h2>
-          <p>Corrections are checked against primary sources. No public record changes automatically.</p>
+          <p>Corrections are checked against primary sources and recorded as a new audited update.</p>
         </article>
       </section>
     </>
