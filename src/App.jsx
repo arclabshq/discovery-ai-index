@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 
 const STATUS_COPY = {
   verified: "Verified record",
-  under_review: "Verification pending",
+  under_review: "Newly reported",
 };
 
 const TABLE_STATUS_COPY = {
   verified: "Verified",
-  under_review: "Pending",
+  under_review: "Newly reported",
 };
 
 const DISCOVERY_TYPE_LABELS = {
@@ -211,7 +211,7 @@ function StatusLegend() {
       </span>
       <span>
         <i className="legend-dot review-dot" aria-hidden="true" />
-        <b>Verification pending</b>
+        <b>Newly reported</b>
         <em>Independent evidence still open</em>
       </span>
     </div>
@@ -456,7 +456,7 @@ function HomePage({ registry, state }) {
           <h2>A growing record of new knowledge, designs, and proofs.</h2>
           <p className="registry-deck">
             {state === "ready"
-              ? `${filtered.length} shown · ${visibleVerified} verified · ${visibleUnderReview} verification pending.`
+              ? `${filtered.length} shown · ${visibleVerified} verified · ${visibleUnderReview} newly reported.`
               : "Every record links to the original research."}
           </p>
         </div>
@@ -505,7 +505,7 @@ function HomePage({ registry, state }) {
         <>
           <p className="sr-only" aria-live="polite">
             {filtered.length} {filtered.length === 1 ? "discovery" : "discoveries"} shown:
-            {" "}{visibleVerified} verified and {visibleUnderReview} verification pending.
+            {" "}{visibleVerified} verified and {visibleUnderReview} newly reported.
           </p>
           {filtered.length ? (
             isMobile ? (
@@ -760,7 +760,7 @@ function HowItWorksPage() {
       <section className="status-explainer status-legend public-statuses">
         <article>
           <span className="status-dot review-dot" />
-          <p className="section-kicker amber">Orange · verification pending</p>
+          <p className="section-kicker amber">Orange · newly reported</p>
           <h2>Primary source linked. Independent evidence still open.</h2>
           <p>
             The AI-assisted editorial system has checked the source, but the record still lacks
@@ -799,7 +799,7 @@ function HowItWorksPage() {
           <p className="section-kicker">Update cadence</p>
           <h2>Evidence checks are date-stamped.</h2>
           <p>
-            The automated scan looks for new candidate discoveries, and Luna Max rechecks pending
+            The automated scan looks for new candidate discoveries, and Luna Max rechecks under-review
             records for paper revisions, peer review, formal checks, replications, corrections, and
             retractions. Every status or content change is written to the audit trail.
           </p>
