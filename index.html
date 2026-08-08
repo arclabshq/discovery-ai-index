@@ -3,12 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="canonical" href="https://discovery-index.alexreeder.chatgpt.site/" />
     <meta
       name="description"
       content="The global catalog of discoveries materially enabled by AI—explained simply, traced to primary research, and labeled by how each result was validated."
     />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="Discovery AI Index" />
     <meta name="theme-color" content="#fbfaf7" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Discovery AI Index" />
     <meta property="og:url" content="https://discovery-index.alexreeder.chatgpt.site" />
     <meta
       property="og:title"
@@ -42,9 +46,45 @@
       content="https://discovery-index.alexreeder.chatgpt.site/og.png"
     />
     <title>Discovery AI Index — The global catalog of AI-enabled discoveries</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://discovery-index.alexreeder.chatgpt.site/#website",
+            "url": "https://discovery-index.alexreeder.chatgpt.site/",
+            "name": "Discovery AI Index",
+            "description": "The global catalog of discoveries materially enabled by AI."
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://discovery-index.alexreeder.chatgpt.site/#organization",
+            "name": "Discovery AI Index",
+            "url": "https://discovery-index.alexreeder.chatgpt.site/",
+            "description": "An evidence-first catalog of discoveries materially enabled by AI."
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main>
+        <p>Global discovery catalog</p>
+        <h1>See what AI is helping humanity discover.</h1>
+        <p>
+          Explore discoveries across medicine, science, mathematics, and technology—explained
+          simply, traced to the original research, and labeled by how each result was validated.
+        </p>
+        <nav aria-label="Discovery AI Index pages">
+          <a href="/">Discoveries</a>
+          <a href="/method">Method</a>
+          <a href="/about">About</a>
+        </nav>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

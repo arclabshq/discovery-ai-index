@@ -83,10 +83,10 @@ the application, migrations, schema, taxonomy, thresholds, workflow permissions,
 The worker exposes a scheduled handler and a protected manual
 `POST /api/intake/run` hook. Both call the same bounded source scanner.
 
-The initial scanner:
+The current approved source scanner:
 
-1. Searches a date-bounded arXiv query for AI-assisted discovery language.
-2. Caps each run at 25 source records.
+1. Queries date-bounded arXiv, bioRxiv, medRxiv, PubMed, and Crossref feeds for AI-assisted discovery language.
+2. Caps each source scan at 25 source records.
 3. Applies a second keyword screen.
 4. Inserts only `candidate` records.
 5. Preserves reviewed or verified records on duplicate URLs.
@@ -99,8 +99,8 @@ safe-off; a source outage never changes published records.
 
 The production GitHub workflow is a thin trigger with no repository permissions. It receives no editorial,
 repository-write, migration, or deployment credential. It cannot edit this application or make a
-candidate public. The initial scanner covers recent arXiv candidates only; expanding its approved
-sources or changing its rules requires a reviewed code change.
+candidate public. The scanner remains candidate-only; adding another approved source or changing its
+screening rules requires a reviewed code change.
 
 ## Review checklist
 

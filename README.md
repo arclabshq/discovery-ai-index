@@ -43,9 +43,9 @@ Protected intake endpoint -> bounded source scan -> private D1 candidates + run 
 - GitHub Actions validates pull requests and triggers the candidate-only daily scan.
 - Codex Sites remains the deployment transport; a D1 data change does not require a rebuild.
 
-The first scanner is deliberately narrow: it checks a bounded recent arXiv query, deduplicates by
-primary-source URL, and writes only private candidates. It is a starting intake lane, not yet a
-comprehensive global research monitor.
+The scanner checks bounded recent windows across arXiv, bioRxiv, medRxiv, PubMed, and Crossref,
+deduplicates by canonical primary-source URL, and writes only private candidates. It is a set of
+bounded intake lanes, not an automatic publication system or a comprehensive global research monitor.
 
 ## Local development
 
@@ -71,8 +71,9 @@ migrations under `dist/.openai/drizzle/`.
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `INTAKE_ENABLED` | Enables candidate-only source scanning | `false` |
-| `INTAKE_LOOKBACK_DAYS` | Recent arXiv window, clamped to 2–30 days | `14` |
+| `INTAKE_LOOKBACK_DAYS` | Recent window for each approved source, clamped to 2–30 days | `14` |
 | `INTAKE_MAX_RESULTS` | Per-run source cap, clamped to 1–25 | `12` |
+| `INTAKE_SOURCES` | Optional comma-separated source-key allowlist; unset means all approved feeds | all |
 | `INTAKE_TOKEN` | Bearer token for the protected intake endpoint | unset / fail closed |
 | `EDITORIAL_TOKEN` | Separate bearer token for editorial review routes | unset / fail closed |
 | `AUTOMATION_TOKEN` | Separate bearer token for the Luna Max structured-data route | unset / fail closed |
@@ -94,8 +95,9 @@ curl --fail-with-body --request POST \
   https://discovery-index.alexreeder.chatgpt.site/api/intake/run
 ```
 
-Every run is bounded, deduplicated, logged in `intake_runs`, and protected against overlap. A source
-failure leaves every public record unchanged. Candidate records are excluded from all public APIs.
+Every source run is bounded, deduplicated, logged in `intake_runs`, and protected against overlap. A
+source failure leaves every public record unchanged and is reported separately from successful source
+runs. Candidate records are excluded from all public APIs.
 
 ## Daily Luna Max assessment
 

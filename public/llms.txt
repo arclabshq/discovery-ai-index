@@ -1,0 +1,17 @@
+# Discovery AI Index
+
+Discovery AI Index is an evidence-first public catalog of discoveries materially enabled by AI across medicine, science, mathematics, and technology.
+
+## Editorial policy
+
+- Public records are either `verified` or `under_review`.
+- Candidate records remain private until editorial review starts.
+- Each record names the AI system's role and links to the strongest available primary source.
+- `verified` means a meaningful external check is documented; it does not mean every possible consequence has been replicated.
+
+## Public pages
+
+- Home: https://discovery-index.alexreeder.chatgpt.site/
+- Method: https://discovery-index.alexreeder.chatgpt.site/method
+- About: https://discovery-index.alexreeder.chatgpt.site/about
+- Machine-readable registry: https://discovery-index.alexreeder.chatgpt.site/api/registry

@@ -1,0 +1,50 @@
+{
+  "runDate": "2026-08-07",
+  "runAt": "2026-08-08T00:37:44Z",
+  "mode": "daily_luna_max_editorial_pass_with_source_expansion",
+  "queueCommand": "node scripts/luna-automation.mjs queue",
+  "queueBefore": {
+    "candidate": 4,
+    "under_review": 13
+  },
+  "queueAfter": {
+    "candidate": 4,
+    "under_review": 13
+  },
+  "recordsInspected": 17,
+  "primarySourcesChecked": [
+    "https://doi.org/10.1126/science.aec2657",
+    "https://pubmed.ncbi.nlm.nih.gov/42561074/",
+    "https://doi.org/10.1101/2025.09.12.675911",
+    "https://arcinstitute.org/news/hie-king-first-synthetic-phage",
+    "https://api.crossref.org/works/10.1126%2Fscience.aec2657",
+    "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=42561074&retmode=xml"
+  ],
+  "revisionRetractionChecks": {
+    "crossref": "The current Crossref record is a journal article published 2026-08-06 and has no update relation.",
+    "pubmed": "PMID 42561074 is a Science journal article published 2026-08-06. A PMID-specific search for retracted publication, published erratum, expression of concern, or correction returned zero matches; PubMed records a comment-in item, not an erratum or retraction."
+  },
+  "updates": [
+    {
+      "action": "transition",
+      "id": "candidate-pubmed-pmid-42561074",
+      "status": "under_review",
+      "note": "The primary Science article (DOI 10.1126/science.aec2657; PMID 42561074; published 2026-08-06) reports the first generative design of complete bacteriophage genomes using genome language models and experimental testing of 16 viable phages. The bioRxiv version (DOI 10.1101/2025.09.12.675911) and Arc Institute's official technical explainer provide the source history and describe the human-led fine-tuning, prompting, screening, genome assembly, host-range testing, and biosafety procedures. This is enough evidence for public review as an AI-assisted genome-design result; independent replication, broader host-range limits, and external confirmation of safety claims remain open.",
+      "title": "AI-designed bacteriophage genomes yield 16 viable phages",
+      "summary": "Genome language models Evo 1 and Evo 2 generated complete bacteriophage genomes using ΦX174 as a design template. Laboratory testing yielded 16 viable phages with diverse fitness profiles; one was characterized by cryo-electron microscopy and a generated-phage cocktail overcame ΦX174-resistant E. coli strains in laboratory testing.",
+      "field": "Synthetic biology and bacteriophage engineering",
+      "aiSystem": "Evo 1 and Evo 2 genome language models",
+      "sourceLabel": "Science research article; PubMed PMID 42561074",
+      "sourceType": "Peer-reviewed research article",
+      "evidenceLevel": "peer_reviewed_experimental",
+      "discoveryType": "design",
+      "validationStage": "lab_confirmed",
+      "whyItMatters": "The study demonstrates that genome language models can generate genetically novel bacteriophages that function in laboratory hosts, creating a testable route for synthetic phage design; therapeutic use and broader host-range claims remain open.",
+      "aiRole": "Evo 1 and Evo 2 generated candidate whole-genome sequences and helped explore sequence space; researchers chose the ΦX174 template, fine-tuned and prompted the models, screened 285 designs, assembled and tested the genomes, characterized the 16 functional phages, and interpreted the host-range and biosafety experiments.",
+      "verificationNote": "The Science/PubMed primary record reports 16 viable phages with laboratory fitness testing, cryo-electron microscopy of a generated capsid protein, and resistance experiments in E. coli. The Arc Institute technical explainer reports 285 designs screened, restricted tropism to non-pathogenic laboratory E. coli hosts, and dedicated containment procedures. The authors' safety claim is recorded as source-reported rather than independently established. Crossref shows no update relation, and the PMID-specific NCBI notice search found no retraction, erratum, expression-of-concern, or correction signal."
+    }
+  ],
+  "blockers": [
+    "The expanded candidate-only worker is locally built and tested but not deployed. The current D1 queue has no candidate-pubmed-pmid-42561074 record, so the staged Luna transition cannot be applied until the worker is deployed and the intake endpoint creates the private candidate."
+  ]
+}

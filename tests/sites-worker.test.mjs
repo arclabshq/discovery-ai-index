@@ -3,7 +3,13 @@ import { access } from "node:fs/promises";
 import test from "node:test";
 import worker, {
   buildArxivUrl,
+  buildBiorxivUrl,
+  buildCrossrefUrl,
+  buildPubmedSearchUrl,
   parseArxivEntries,
+  parseBiorxivEntries,
+  parseCrossrefEntries,
+  parsePubmedEntries,
   runCandidateIntake,
 } from "../worker/index.js";
 
@@ -64,6 +70,85 @@ test("serves the root app shell for a discovery record before the asset layer ca
 
   assert.equal(response.status, 200);
   assert.deepEqual(calls, ["/"]);
+});
+
+test("serves crawlable metadata, record HTML, and a public-record sitemap", async () => {
+  const row = {
+    id: "verified",
+    slug: "record",
+    title: "A useful discovery",
+    summary: "A plain-language summary of the result.",
+    field: "Science",
+    ai_system: "Example system",
+    ai_role_plain: "The system proposed candidates that researchers checked.",
+    status: "verified",
+    announced_at: "2026-07-24",
+    verified_at: "2026-07-25",
+    source_url: "https://example.test/source",
+    source_label: "Primary paper",
+    source_type: "Research publication",
+    verification_note: "An independent check is documented.",
+    evidence_level: "peer_reviewed",
+    discovery_type: "discovery",
+    validation_stage: "peer_reviewed",
+    why_it_matters: "The result makes a useful capability possible.",
+    history_start_label: null,
+    history_start_date: null,
+    history_result_label: null,
+    history_duration_label: null,
+    history_source_url: null,
+    review_started_at: null,
+    published_at: "2026-07-25",
+    updated_at: "2026-07-25 12:00:00",
+  };
+  const appShell = `<!doctype html><html><head><title>Discovery</title><meta name="description" content="Description"><meta property="og:title" content="Discovery"><meta property="og:description" content="Description"><meta property="og:type" content="website"><meta property="og:url" content="https://example.test/"><meta name="twitter:title" content="Discovery"><meta name="twitter:description" content="Description"><link rel="canonical" href="https://example.test/"></head><body><div id="root"></div></body></html>`;
+  const env = {
+    DB: {
+      prepare(sql) {
+        if (sql.includes("slug = ?")) {
+          return {
+            bind(slug) {
+              return { all: async () => ({ results: slug === row.slug ? [row] : [] }) };
+            },
+          };
+        }
+        return {
+          all: async () => ({ results: [row] }),
+        };
+      },
+    },
+    ASSETS: {
+      fetch: async () => new Response(appShell, { status: 200 }),
+    },
+  };
+
+  const robots = await worker.fetch(new Request("https://example.test/robots.txt"), env);
+  assert.equal(robots.status, 200);
+  assert.match(await robots.text(), /Sitemap: https:\/\/discovery-index\.alexreeder\.chatgpt\.site\/sitemap\.xml/);
+
+  const sitemap = await worker.fetch(new Request("https://example.test/sitemap.xml"), env);
+  const sitemapBody = await sitemap.text();
+  assert.equal(sitemap.status, 200);
+  assert.match(sitemapBody, /<loc>https:\/\/discovery-index\.alexreeder\.chatgpt\.site\/discoveries\/record<\/loc>/);
+
+  const record = await worker.fetch(
+    new Request("https://example.test/discoveries/record", {
+      headers: { accept: "text/html" },
+    }),
+    env,
+  );
+  const recordBody = await record.text();
+  assert.equal(record.status, 200);
+  assert.match(recordBody, /<h1>A useful discovery<\/h1>/);
+  assert.match(recordBody, /<meta name="robots" content="index, follow" \/>/);
+  assert.match(recordBody, /<script type="application\/ld\+json">.*"@type":"Article"/s);
+  assert.match(recordBody, /https:\/\/example\.test\/source/);
+
+  const about = await worker.fetch(
+    new Request("https://example.test/about", { headers: { accept: "text/html" } }),
+    env,
+  );
+  assert.match(await about.text(), /<h1>The global catalog of discoveries materially enabled by AI\.<\/h1>/);
 });
 
 test("does not turn missing API or write requests into the app shell", async () => {
@@ -345,6 +430,100 @@ test("candidate intake parser normalizes primary arXiv links", () => {
   ]);
 });
 
+test("primary-source feed parsers normalize canonical records", () => {
+  assert.deepEqual(
+    parseBiorxivEntries(
+      {
+        collection: [
+          {
+            doi: "10.1101/2025.09.12.675911",
+            title: "Generative design of novel bacteriophages",
+            abstract: "<p>Language models generated viable phages.</p>",
+            date: "2025-09-17",
+            category: "Microbiology",
+          },
+        ],
+      },
+      "biorxiv",
+    ),
+    [
+      {
+        externalId: "10.1101/2025.09.12.675911",
+        sourceUrl: "https://doi.org/10.1101/2025.09.12.675911",
+        title: "Generative design of novel bacteriophages",
+        summary: "Language models generated viable phages.",
+        announcedAt: "2025-09-17",
+        field: "Microbiology",
+      },
+    ],
+  );
+
+  assert.deepEqual(
+    parsePubmedEntries({
+      result: {
+        uids: ["42561074"],
+        "42561074": {
+          title: "Generative design of bacteriophages with genome language models.",
+          fulljournalname: "Science (New York, N.Y.)",
+          pubdate: "2026 Aug 06",
+          articleids: [{ idtype: "doi", value: "10.1126/science.aec2657" }],
+        },
+      },
+    }),
+    [
+      {
+        externalId: "pmid-42561074",
+        sourceUrl: "https://doi.org/10.1126/science.aec2657",
+        title: "Generative design of bacteriophages with genome language models.",
+        summary:
+          "PubMed-indexed research record in Science (New York, N.Y.); the primary article and abstract require editorial review.",
+        announcedAt: "2026-08-06",
+        field: "Science (New York, N.Y.)",
+        sourceScreened: true,
+      },
+    ],
+  );
+
+  assert.deepEqual(
+    parseCrossrefEntries({
+      message: {
+        items: [
+          {
+            DOI: "10.1126/science.aec2657",
+            title: ["Generative design of bacteriophages with genome language models"],
+            abstract: "<jats:p>Experimental testing yielded 16 phages.</jats:p>",
+            published: { "date-parts": [[2026, 8, 6]] },
+            type: "journal-article",
+            "container-title": ["Science"],
+          },
+        ],
+      },
+    }),
+    [
+      {
+        externalId: "10.1126/science.aec2657",
+        sourceUrl: "https://doi.org/10.1126/science.aec2657",
+        title: "Generative design of bacteriophages with genome language models",
+        summary: "Experimental testing yielded 16 phages.",
+        announcedAt: "2026-08-06",
+        field: "Science",
+      },
+    ],
+  );
+});
+
+test("primary-source feed queries are bounded by the shared date window", () => {
+  const now = new Date("2026-08-07T12:00:00Z");
+  const env = { INTAKE_LOOKBACK_DAYS: "7", INTAKE_MAX_RESULTS: "9" };
+  assert.match(buildBiorxivUrl("biorxiv", now, env), /2026-07-31\/2026-08-07\/0$/);
+  const pubmed = new URL(buildPubmedSearchUrl(now, env));
+  assert.equal(pubmed.searchParams.get("retmax"), "9");
+  assert.match(pubmed.searchParams.get("term"), /2026-07-31/);
+  const crossref = new URL(buildCrossrefUrl(now, env));
+  assert.equal(crossref.searchParams.get("rows"), "9");
+  assert.match(crossref.searchParams.get("filter"), /from-pub-date:2026-07-31/);
+});
+
 test("scheduled intake query is bounded by date and result count", () => {
   const url = new URL(
     buildArxivUrl(new Date("2026-07-23T12:00:00Z"), {
@@ -365,6 +544,69 @@ test("candidate intake is safe-off and reports that public records cannot change
     candidatesSeen: 0,
     candidatesAdded: 0,
   });
+});
+
+test("candidate intake can add a screened PubMed record without publishing it", async () => {
+  const originalFetch = globalThis.fetch;
+  const statements = [];
+  const bindings = [];
+  globalThis.fetch = async (url) => {
+    if (String(url).includes("esearch.fcgi")) {
+      return new Response(JSON.stringify({ esearchresult: { idlist: ["42561074"] } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return new Response(
+      JSON.stringify({
+        result: {
+          uids: ["42561074"],
+          "42561074": {
+            title: "Generative design of bacteriophages with genome language models.",
+            fulljournalname: "Science",
+            pubdate: "2026 Aug 06",
+            articleids: [{ idtype: "doi", value: "10.1126/science.aec2657" }],
+          },
+        },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  };
+
+  const env = {
+    INTAKE_ENABLED: "true",
+    INTAKE_SOURCES: "pubmed-discovery-scan",
+    INTAKE_MAX_RESULTS: "1",
+    DB: {
+      prepare(sql) {
+        statements.push(sql);
+        return {
+          bind(...args) {
+            bindings.push({ sql, args });
+            return {
+              first: async () => null,
+              run: async () => ({ meta: { changes: 1 } }),
+            };
+          },
+        };
+      },
+    },
+  };
+
+  try {
+    const response = await runCandidateIntake(env, new Date("2026-08-07T12:00:00Z"));
+    assert.equal(response.status, "completed");
+    assert.equal(response.publicRecordsChanged, 0);
+    assert.equal(response.candidatesSeen, 1);
+    assert.equal(response.candidatesAdded, 1);
+    assert.equal(response.sources[0].sourceKey, "pubmed-discovery-scan");
+    const insert = bindings.find(({ sql }) => sql.includes("INSERT OR IGNORE INTO discoveries"));
+    assert.ok(insert);
+    assert.equal(insert.args.includes("candidate-pubmed-pmid-42561074"), true);
+    assert.equal(statements.some((sql) => sql.includes("INSERT OR IGNORE INTO intake_runs")), true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("candidate intake skips an overlapping source scan", async () => {
@@ -388,14 +630,22 @@ test("candidate intake skips an overlapping source scan", async () => {
   };
 
   const response = await runCandidateIntake(env, new Date("2026-08-02T10:17:00Z"));
-  assert.deepEqual(response, {
-    mode: "candidate_only",
-    publicRecordsChanged: 0,
-    status: "skipped",
-    reason: "source_scan_already_running",
-    candidatesSeen: 0,
-    candidatesAdded: 0,
-  });
+  assert.equal(response.mode, "candidate_only");
+  assert.equal(response.publicRecordsChanged, 0);
+  assert.equal(response.status, "skipped");
+  assert.equal(response.reason, "source_scan_already_running");
+  assert.equal(response.candidatesSeen, 0);
+  assert.equal(response.candidatesAdded, 0);
+  assert.deepEqual(
+    response.sources.map((source) => source.sourceKey),
+    [
+      "arxiv-discovery-scan",
+      "biorxiv-discovery-scan",
+      "medrxiv-discovery-scan",
+      "pubmed-discovery-scan",
+      "crossref-discovery-scan",
+    ],
+  );
   assert.equal(statements.some((sql) => sql.includes("UPDATE intake_runs")), true);
   assert.equal(statements.some((sql) => sql.includes("INSERT OR IGNORE INTO intake_runs")), true);
 });
