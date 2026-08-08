@@ -85,6 +85,135 @@ function validationStageLabel(value) {
   return VALIDATION_STAGE_LABELS[value] || "Published evidence";
 }
 
+const VELOCITY_BUCKETS = [
+  { value: "year", label: "Year" },
+  { value: "month", label: "Month" },
+  { value: "week", label: "Week" },
+];
+
+function parseUtcDate(value) {
+  if (!value) return null;
+  const date = new Date(value.includes("T") ? value : `${value}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function padNumber(value) {
+  return String(value).padStart(2, "0");
+}
+
+function startOfPeriod(date, bucket) {
+  const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  if (bucket === "year") {
+    return new Date(Date.UTC(start.getUTCFullYear(), 0, 1));
+  }
+  if (bucket === "month") {
+    return new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+  }
+  const mondayOffset = (start.getUTCDay() + 6) % 7;
+  start.setUTCDate(start.getUTCDate() - mondayOffset);
+  return start;
+}
+
+function shiftPeriod(date, bucket, amount) {
+  const shifted = new Date(date);
+  if (bucket === "year") shifted.setUTCFullYear(shifted.getUTCFullYear() + amount);
+  if (bucket === "month") shifted.setUTCMonth(shifted.getUTCMonth() + amount);
+  if (bucket === "week") shifted.setUTCDate(shifted.getUTCDate() + amount * 7);
+  return shifted;
+}
+
+function periodKey(date, bucket) {
+  if (bucket === "year") return String(date.getUTCFullYear());
+  if (bucket === "month") {
+    return `${date.getUTCFullYear()}-${padNumber(date.getUTCMonth() + 1)}`;
+  }
+  const thursday = new Date(date);
+  thursday.setUTCDate(date.getUTCDate() + 3 - ((date.getUTCDay() + 6) % 7));
+  const firstThursday = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 4));
+  const weekNumber =
+    1 +
+    Math.round(
+      ((thursday.getTime() - firstThursday.getTime()) / 86400000 -
+        3 +
+        ((firstThursday.getUTCDay() + 6) % 7)) /
+        7,
+    );
+  return `${thursday.getUTCFullYear()}-W${padNumber(weekNumber)}`;
+}
+
+function periodLabel(date, bucket) {
+  if (bucket === "year") return String(date.getUTCFullYear());
+  if (bucket === "month") {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      year: "2-digit",
+      timeZone: "UTC",
+    }).format(date);
+  }
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+function buildVelocitySeries(discoveries, bucket) {
+  const announcedDates = discoveries.map((item) => parseUtcDate(item.announcedAt)).filter(Boolean);
+  const verifiedDates = discoveries.map((item) => parseUtcDate(item.verifiedAt)).filter(Boolean);
+  const eventDates = [...announcedDates, ...verifiedDates].sort((a, b) => a - b);
+  if (!eventDates.length) return { rows: [], max: 1, rangeLabel: "No dated records" };
+
+  const latest = startOfPeriod(eventDates[eventDates.length - 1], bucket);
+  const earliest = startOfPeriod(eventDates[0], bucket);
+  const maximumPeriods = bucket === "year" ? 20 : bucket === "month" ? 24 : 26;
+  const limitedStart = shiftPeriod(latest, bucket, -(maximumPeriods - 1));
+  const start = limitedStart > earliest ? limitedStart : earliest;
+  const rows = [];
+
+  for (let cursor = new Date(start); cursor <= latest; cursor = shiftPeriod(cursor, bucket, 1)) {
+    const key = periodKey(cursor, bucket);
+    rows.push({
+      key,
+      label: periodLabel(cursor, bucket),
+      announced: announcedDates.filter((date) => periodKey(startOfPeriod(date, bucket), bucket) === key)
+        .length,
+      verified: verifiedDates.filter((date) => periodKey(startOfPeriod(date, bucket), bucket) === key)
+        .length,
+    });
+  }
+
+  const max = Math.max(1, ...rows.map((row) => row.announced + row.verified));
+  const firstLabel = rows[0]?.label || "";
+  const lastLabel = rows[rows.length - 1]?.label || "";
+  return {
+    rows,
+    max,
+    rangeLabel: firstLabel && lastLabel && firstLabel !== lastLabel ? `${firstLabel} – ${lastLabel}` : lastLabel,
+  };
+}
+
+function medianDaysToVerify(discoveries) {
+  const durations = discoveries
+    .map((item) => {
+      const announced = parseUtcDate(item.announcedAt);
+      const verified = parseUtcDate(item.verifiedAt);
+      return announced && verified ? (verified - announced) / 86400000 : null;
+    })
+    .filter((value) => value !== null && value >= 0)
+    .sort((a, b) => a - b);
+  if (!durations.length) return null;
+  const middle = Math.floor(durations.length / 2);
+  return durations.length % 2
+    ? durations[middle]
+    : (durations[middle - 1] + durations[middle]) / 2;
+}
+
+function formatDays(value) {
+  if (value === null) return "—";
+  if (value < 1) return "Same day";
+  return `${Math.round(value)} ${Math.round(value) === 1 ? "day" : "days"}`;
+}
+
 function DiscoveryHistory({ discovery }) {
   const history = discovery.history;
   if (!history?.startDate || !history?.durationLabel) return null;
@@ -218,6 +347,171 @@ function StatusLegend() {
   );
 }
 
+function VelocityPanel({ discoveries }) {
+  const [bucket, setBucket] = useState("month");
+  const series = useMemo(() => buildVelocitySeries(discoveries, bucket), [discoveries, bucket]);
+  const verified = discoveries.filter((item) => item.status === "verified").length;
+  const underReview = discoveries.length - verified;
+  const medianVerificationDays = medianDaysToVerify(discoveries);
+  const labelStep = bucket === "year" ? 1 : bucket === "month" ? 2 : 4;
+
+  return (
+    <section className="velocity-panel" aria-labelledby="velocity-title">
+      <header className="velocity-heading">
+        <div>
+          <p className="section-kicker">Discovery velocity</p>
+          <h2 id="velocity-title">How quickly are AI-assisted findings entering the record?</h2>
+          <p>
+            Announced records show research activity. Verified records show when the Index
+            completed its evidence review. Neither is a ranking of scientific importance.
+          </p>
+        </div>
+        <div className="velocity-buckets" role="group" aria-label="Velocity time scale">
+          {VELOCITY_BUCKETS.map((option) => (
+            <button
+              type="button"
+              key={option.value}
+              className={bucket === option.value ? "is-selected" : ""}
+              aria-pressed={bucket === option.value}
+              onClick={() => setBucket(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <div className="velocity-stats" aria-label="Registry velocity metrics">
+        <div>
+          <span>Records</span>
+          <strong>{discoveries.length}</strong>
+          <small>Verified and newly reported</small>
+        </div>
+        <div>
+          <span>Verified</span>
+          <strong>{verified}</strong>
+          <small>Review complete</small>
+        </div>
+        <div>
+          <span>Newly reported</span>
+          <strong>{underReview}</strong>
+          <small>Independent evidence open</small>
+        </div>
+        <div>
+          <span>Median announce → verify</span>
+          <strong>{formatDays(medianVerificationDays)}</strong>
+          <small>Recorded dates, including backfills</small>
+        </div>
+      </div>
+
+      <div className="velocity-chart-shell">
+        <div className="velocity-chart-heading">
+          <div className="velocity-legend" aria-label="Chart legend">
+            <span><i className="velocity-swatch announced-swatch" />Records announced</span>
+            <span><i className="velocity-swatch verified-swatch" />Verification completed</span>
+          </div>
+          <span>{series.rangeLabel}</span>
+        </div>
+        <div className="velocity-chart-scroll">
+          <div
+            className="velocity-chart"
+            role="img"
+            aria-label={`Discovery velocity chart for ${series.rangeLabel}. Each period is one stacked column: records announced are light blue and verification completed are dark blue.`}
+          >
+            {series.rows.map((row, index) => (
+              <div
+                className="velocity-period"
+                key={row.key}
+                title={`${row.label}: ${row.announced} announced, ${row.verified} verified`}
+              >
+                <div className="velocity-bars" aria-hidden="true">
+                  <span
+                    className="velocity-bar-stack"
+                    style={{
+                      height: row.announced + row.verified
+                        ? `${Math.max(5, ((row.announced + row.verified) / series.max) * 100)}%`
+                        : "0%",
+                    }}
+                  >
+                    <span
+                      className="velocity-bar-segment announced-bar"
+                      style={{
+                        height: row.announced + row.verified
+                          ? `${(row.announced / (row.announced + row.verified)) * 100}%`
+                          : "0%",
+                      }}
+                    />
+                    <span
+                      className="velocity-bar-segment verified-bar"
+                      style={{
+                        height: row.announced + row.verified
+                          ? `${(row.verified / (row.announced + row.verified)) * 100}%`
+                          : "0%",
+                      }}
+                    />
+                  </span>
+                </div>
+                <span className="velocity-period-label">
+                  {index % labelStep === 0 || index === series.rows.length - 1
+                    ? row.label
+                    : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="velocity-note">
+          Each column stacks announced and verification events. Announced uses each record&apos;s
+          research date; verification uses the date the Index completed review. Historical backfills
+          may be same-day, so the chart describes catalog activity, not research quality.
+        </p>
+        <table className="velocity-data-table sr-only">
+          <caption>Discovery velocity data by {bucket}</caption>
+          <thead>
+            <tr><th scope="col">Period</th><th scope="col">Announced</th><th scope="col">Verified</th></tr>
+          </thead>
+          <tbody>
+            {series.rows.map((row) => (
+              <tr key={`${row.key}-accessible`}>
+                <th scope="row">{row.label}</th>
+                <td>{row.announced}</td>
+                <td>{row.verified}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function RegistryStatusFilter({ value, onChange, counts }) {
+  const options = [
+    { value: "all", label: "All", count: counts.all },
+    { value: "verified", label: "Verified", count: counts.verified },
+    { value: "under_review", label: "New", count: counts.underReview },
+  ];
+
+  return (
+    <fieldset className="registry-status-filter">
+      <legend>Show</legend>
+      <div className="registry-status-buttons">
+        {options.map((option) => (
+          <button
+            type="button"
+            key={option.value}
+            className={value === option.value ? "is-selected" : ""}
+            aria-pressed={value === option.value}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label} <span>{option.count}</span>
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 function RegistryState({ state }) {
   if (state === "loading") {
     return (
@@ -251,21 +545,15 @@ function RegistryTable({ discoveries }) {
         </caption>
         <colgroup>
           <col className="col-date" />
-          <col className="col-field" />
-          <col className="col-model" />
           <col className="col-discovery" />
-          <col className="col-summary" />
-          <col className="col-impact" />
+          <col className="col-model" />
           <col className="col-evidence" />
         </colgroup>
         <thead>
           <tr>
             <th scope="col">Announced</th>
-            <th scope="col">Field</th>
-            <th scope="col">Model</th>
             <th scope="col">Breakthrough</th>
-            <th scope="col">Summary</th>
-            <th scope="col">Why this matters</th>
+            <th scope="col">AI system</th>
             <th scope="col">Evidence</th>
           </tr>
         </thead>
@@ -282,16 +570,12 @@ function RegistryTable({ discoveries }) {
                 <td className="record-date" data-label="Announced">
                   <time dateTime={discovery.announcedAt}>{formatDate(discovery.announcedAt)}</time>
                 </td>
-                <td className="record-field" data-label="Field">
-                  {discovery.field}
-                </td>
-                <td className="record-model" data-label="Model">
-                  <strong>{discovery.aiSystem}</strong>
-                </td>
                 <td className="record-title" data-label="Breakthrough">
-                  <span className="record-type-label">
-                    {discoveryTypeLabel(discovery.discoveryType)}
-                  </span>
+                  <div className="record-title-meta">
+                    <span>{discovery.field}</span>
+                    <i aria-hidden="true">·</i>
+                    <span>{discoveryTypeLabel(discovery.discoveryType)}</span>
+                  </div>
                   <h3>
                     <a
                       className="record-link"
@@ -301,12 +585,10 @@ function RegistryTable({ discoveries }) {
                       {discovery.title} <span aria-hidden="true">→</span>
                     </a>
                   </h3>
+                  <p className="record-row-summary">{discovery.summary}</p>
                 </td>
-                <td className="record-plain-summary" data-label="Summary">
-                  <span className="record-cell-clamp">{discovery.summary}</span>
-                </td>
-                <td className="record-impact" data-label="Why this matters">
-                  <span className="record-cell-clamp">{discovery.whyItMatters}</span>
+                <td className="record-model" data-label="AI system">
+                  <strong>{discovery.aiSystem}</strong>
                 </td>
                 <td className="record-evidence" data-label="Evidence">
                   <a
@@ -398,6 +680,8 @@ function HomePage({ registry, state }) {
   const [field, setField] = useState("All fields");
   const [discoveryType, setDiscoveryType] = useState("All types");
   const [validationStage, setValidationStage] = useState("All evidence");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
   const isMobile = useMediaQuery("(max-width: 760px)");
   const discoveries = useMemo(
     () =>
@@ -425,19 +709,52 @@ function HomePage({ registry, state }) {
     [discoveries],
   );
   const filtered = useMemo(
-    () =>
-      discoveries.filter(
-        (item) =>
+    () => {
+      const searchNeedle = search.trim().toLowerCase();
+      return discoveries.filter((item) => {
+        const searchable = [
+          item.title,
+          item.summary,
+          item.field,
+          item.aiSystem,
+          item.whyItMatters,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return (
           (field === "All fields" || item.field === field) &&
           (discoveryType === "All types" ||
             (item.discoveryType || "unclassified") === discoveryType) &&
           (validationStage === "All evidence" ||
-            (item.validationStage || "not_assessed") === validationStage),
-      ),
-    [discoveries, discoveryType, field, validationStage],
+            (item.validationStage || "not_assessed") === validationStage) &&
+          (statusFilter === "all" || item.status === statusFilter) &&
+          (!searchNeedle || searchable.includes(searchNeedle))
+        );
+      });
+    },
+    [discoveries, discoveryType, field, search, statusFilter, validationStage],
   );
   const visibleVerified = filtered.filter((item) => item.status === "verified").length;
   const visibleUnderReview = filtered.length - visibleVerified;
+  const counts = {
+    all: discoveries.length,
+    verified: registry.verified.length,
+    underReview: registry.underReview.length,
+  };
+  const hasActiveFilters =
+    Boolean(search.trim()) ||
+    field !== "All fields" ||
+    discoveryType !== "All types" ||
+    validationStage !== "All evidence" ||
+    statusFilter !== "all";
+  const clearFilters = () => {
+    setField("All fields");
+    setDiscoveryType("All types");
+    setValidationStage("All evidence");
+    setStatusFilter("all");
+    setSearch("");
+  };
 
   return (
     <>
@@ -450,17 +767,29 @@ function HomePage({ registry, state }) {
         </p>
       </section>
 
+      {state === "ready" && <VelocityPanel discoveries={discoveries} />}
+
       <section className="registry-toolbar" id="registry">
         <div>
           <p className="section-kicker">Discovery registry</p>
-          <h2>A growing record of new knowledge, designs, and proofs.</h2>
+          <h2>A focused record of new knowledge, designs, and proofs.</h2>
           <p className="registry-deck">
             {state === "ready"
-              ? `${filtered.length} shown · ${visibleVerified} verified · ${visibleUnderReview} newly reported.`
+              ? "Filter by title, field, AI system, or evidence stage."
               : "Every record links to the original research."}
           </p>
         </div>
         <div className="registry-controls">
+          <label className="registry-search-field">
+            Search
+            <input
+              type="search"
+              value={search}
+              placeholder="Title, field, or AI system"
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </label>
+          <RegistryStatusFilter value={statusFilter} onChange={setStatusFilter} counts={counts} />
           <label id="fields">
             Field
             <select value={field} onChange={(event) => setField(event.target.value)}>
@@ -498,7 +827,16 @@ function HomePage({ registry, state }) {
         </div>
       </section>
 
-      <StatusLegend />
+      <div className="registry-filter-summary" aria-live="polite">
+        <span>
+          {filtered.length} {filtered.length === 1 ? "record" : "records"} shown · {visibleVerified} verified · {visibleUnderReview} newly reported
+        </span>
+        {hasActiveFilters && (
+          <button type="button" onClick={clearFilters}>
+            Clear filters
+          </button>
+        )}
+      </div>
       <RegistryState state={state} />
 
       {state === "ready" && (
