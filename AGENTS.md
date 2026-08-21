@@ -22,7 +22,10 @@ records as discovery, proof, design, translation, or research milestone, and sep
 the strongest documented validation stage. Keep one study-level discovery set as one registry
 record rather than inflating the count with every object in the set.
 
-Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts/prepare-sites-build.mjs`, and `tests/sites-worker.test.mjs` intact so the same local prototype can be handed to Sites. Before a Sites handoff, run `npm run build` and `npm run test:sites`; the build must leave `dist/client/index.html`, `dist/server/index.js`, and `dist/.openai/hosting.json`.
+Build app UI in `src/`. The public frontend deploys from GitHub `main` to Vercel. Keep
+`worker/index.js`, `wrangler.jsonc`, the D1 migrations, and worker tests intact so the Cloudflare
+Worker API and Vercel frontend stay compatible. Before deployment, run `npm run check`; the build
+must leave `dist/client/index.html` plus static entry points for About, Method, and How it works.
 
 The automated source scan may write only private candidate records, candidate observation metadata,
 and intake audit rows. The authenticated Luna Max automation may write structured discovery fields

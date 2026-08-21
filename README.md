@@ -1,6 +1,6 @@
 # Discovery AI Index
 
-[Discovery AI Index](https://discovery-index.alexreeder.chatgpt.site) is an evidence-first catalog of
+[Discovery AI Index](https://www.discoveryindex.arclabshq.com) is an evidence-first catalog of
 discoveries materially enabled by AI. It explains what changed, why the result matters, how AI
 contributed, and the strongest evidence available.
 
@@ -37,11 +37,13 @@ Protected intake endpoint -> bounded source scan -> private D1 candidates + run 
 ## Architecture
 
 - React and Vite render the public interface.
-- A Codex Sites Worker serves the application and API.
+- Vercel serves the public React application from GitHub `main`.
+- A Cloudflare Worker serves the API and crawlable discovery pages.
 - D1 is the canonical structured registry and audit store.
 - SQL migrations define the schema and founding seed records.
 - GitHub Actions validates pull requests and triggers the candidate-only daily scan.
-- Codex Sites remains the deployment transport; a D1 data change does not require a rebuild.
+- Vercel rewrites API and discovery-record requests to the Cloudflare Worker; a D1 data change does
+  not require a frontend rebuild.
 
 The scanner checks bounded recent windows across arXiv, bioRxiv, medRxiv, PubMed, and Crossref,
 deduplicates by canonical primary-source URL, and writes only private candidates. It is a set of
@@ -63,8 +65,8 @@ npm run check
 npm audit --audit-level=high
 ```
 
-`npm run build` creates the Cloudflare Workers-compatible Sites bundle in `dist/` and stages D1
-migrations under `dist/.openai/drizzle/`.
+`npm run build` creates the Vercel static frontend in `dist/client/`. `npm run worker:deploy`
+publishes the API Worker and its crawlable discovery-page shell after the frontend build succeeds.
 
 ## Runtime configuration
 
@@ -78,8 +80,8 @@ migrations under `dist/.openai/drizzle/`.
 | `EDITORIAL_TOKEN` | Separate bearer token for editorial review routes | unset / fail closed |
 | `AUTOMATION_TOKEN` | Separate bearer token for the Luna Max structured-data route | unset / fail closed |
 
-Secrets belong in Sites environment variables and GitHub Actions secrets, never in Git. Forks must
-replace the Sites project identifier in `.openai/hosting.json` with their own project.
+Secrets belong in Cloudflare Worker secrets and GitHub Actions secrets, never in Git. Forks must
+replace the D1 database identifier in `wrangler.jsonc` with their own database.
 
 ## Daily candidate intake
 
@@ -92,7 +94,7 @@ To run the same intake manually:
 ```bash
 curl --fail-with-body --request POST \
   --header "Authorization: Bearer $DISCOVERY_AI_INTAKE_TOKEN" \
-  https://discovery-index.alexreeder.chatgpt.site/api/intake/run
+  https://www.discoveryindex.arclabshq.com/api/intake/run
 ```
 
 Every source run is bounded, deduplicated, logged in `intake_runs`, and protected against overlap. A
@@ -129,10 +131,10 @@ migrations.
 
 ## Deployment and rollback
 
-Changes merge to the public GitHub `main` branch after CI, then the same validated source is pushed
-to the dedicated Sites deployment remote and published as a version. Sites versions provide code
-rollback. Registry corrections use a new audited editorial event; history is preserved rather than
-silently overwritten.
+Changes merge to the public GitHub `main` branch after CI. Vercel deploys the frontend from `main`,
+and the Cloudflare Worker is published from the same commit with `npm run worker:deploy`. Vercel and
+Cloudflare deployment histories provide code rollback. Registry corrections use a new audited
+editorial event; history is preserved rather than silently overwritten.
 
 If candidate intake misbehaves, set `INTAKE_ENABLED=false`. This stops new scans without affecting
 the public registry. Never rotate or expose production tokens in an issue or pull request.

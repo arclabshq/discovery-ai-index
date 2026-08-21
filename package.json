@@ -2,7 +2,7 @@
   "name": "discovery-ai-index",
   "version": "1.0.0",
   "description": "An evidence-first, human-reviewed catalog of discoveries materially enabled by AI.",
-  "homepage": "https://discovery-index.alexreeder.chatgpt.site",
+  "homepage": "https://www.discoveryindex.arclabshq.com",
   "repository": {
     "type": "git",
     "url": "https://github.com/arclabshq/discovery-ai-index.git"
@@ -12,11 +12,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prepare-sites-build.mjs",
+    "build": "vite build && node scripts/prepare-vercel-build.mjs",
     "preview": "vite preview",
-    "test": "npm run test:sites",
-    "test:sites": "node --test tests/sites-worker.test.mjs",
-    "check": "npm run build && npm run test:sites"
+    "test": "npm run test:worker",
+    "test:worker": "node --test tests/worker.test.mjs",
+    "check": "npm run build && npm run test:worker",
+    "worker:types": "wrangler types",
+    "worker:deploy": "wrangler deploy"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.0.4",
@@ -26,5 +28,9 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20260820.1",
+    "wrangler": "4.125.0"
   }
 }

@@ -28,7 +28,7 @@ const PUBLIC_FIELDS = `
 `;
 
 const PUBLIC_STATUSES = new Set(["verified", "under_review"]);
-const SITE_ORIGIN = "https://discovery-index.alexreeder.chatgpt.site";
+const SITE_ORIGIN = "https://www.discoveryindex.arclabshq.com";
 const PUBLIC_SEO_ROUTES = ["/", "/about", "/method"];
 const SEO_STATUS_LABELS = {
   verified: "Verified record",
@@ -1620,6 +1620,10 @@ async function fetchHandler(request, env) {
     if (url.pathname.startsWith("/api/")) {
       return json({ error: "The registry is temporarily unavailable." }, { status: 500 });
     }
+  }
+
+  if (!env.ASSETS?.fetch) {
+    return json({ error: "Not found." }, { status: 404 });
   }
 
   const acceptsHtml = request.headers.get("accept")?.includes("text/html");

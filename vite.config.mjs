@@ -13,7 +13,7 @@ export default defineConfig({
     allowedHosts: ["terminal.local"],
     proxy: {
       "/api": {
-        target: "https://discovery-index.alexreeder.chatgpt.site",
+        target: "https://www.discoveryindex.arclabshq.com",
         changeOrigin: true,
       },
     },

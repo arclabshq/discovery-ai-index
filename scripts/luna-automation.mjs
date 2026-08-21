@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
-const SITE_URL = (process.env.DISCOVERY_AI_INDEX_URL || "https://discovery-index.alexreeder.chatgpt.site").replace(
+const SITE_URL = (process.env.DISCOVERY_AI_INDEX_URL || "https://www.discoveryindex.arclabshq.com").replace(
   /\/$/,
   "",
 );

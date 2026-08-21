@@ -5,7 +5,7 @@ repository. Do not open a public issue for vulnerabilities, exposed credentials,
 bypasses, or unpublished candidate data.
 
 Supported code is the current `main` branch and the version deployed at
-<https://discovery-index.alexreeder.chatgpt.site>.
+<https://www.discoveryindex.arclabshq.com>.
 
 The application is designed to fail closed: intake, human editorial writes, and Luna Max automation
 use separate tokens; private candidates are excluded from public APIs; and automated intake cannot

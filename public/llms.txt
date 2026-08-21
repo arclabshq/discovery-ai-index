@@ -11,7 +11,7 @@ Discovery AI Index is an evidence-first public catalog of discoveries materially
 
 ## Public pages
 
-- Home: https://discovery-index.alexreeder.chatgpt.site/
-- Method: https://discovery-index.alexreeder.chatgpt.site/method
-- About: https://discovery-index.alexreeder.chatgpt.site/about
-- Machine-readable registry: https://discovery-index.alexreeder.chatgpt.site/api/registry
+- Home: https://www.discoveryindex.arclabshq.com/
+- Method: https://www.discoveryindex.arclabshq.com/method
+- About: https://www.discoveryindex.arclabshq.com/about
+- Machine-readable registry: https://www.discoveryindex.arclabshq.com/api/registry

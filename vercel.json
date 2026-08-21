@@ -1,0 +1,24 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/client",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://discovery-ai-index-api.helloarclabshq.workers.dev/api/:path*"
+    },
+    {
+      "source": "/discoveries/:path*",
+      "destination": "https://discovery-ai-index-api.helloarclabshq.workers.dev/discoveries/:path*"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://discovery-ai-index-api.helloarclabshq.workers.dev/robots.txt"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://discovery-ai-index-api.helloarclabshq.workers.dev/sitemap.xml"
+    }
+  ]
+}

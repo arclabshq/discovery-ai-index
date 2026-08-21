@@ -19,7 +19,7 @@ jobs:
       - name: Trigger candidate-only source scan
         shell: bash
         env:
-          INTAKE_URL: https://discovery-index.alexreeder.chatgpt.site/api/intake/run
+          INTAKE_URL: https://www.discoveryindex.arclabshq.com/api/intake/run
           INTAKE_TOKEN: ${{ secrets.DISCOVERY_AI_INTAKE_TOKEN }}
         run: |
           set -euo pipefail

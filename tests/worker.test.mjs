@@ -124,12 +124,12 @@ test("serves crawlable metadata, record HTML, and a public-record sitemap", asyn
 
   const robots = await worker.fetch(new Request("https://example.test/robots.txt"), env);
   assert.equal(robots.status, 200);
-  assert.match(await robots.text(), /Sitemap: https:\/\/discovery-index\.alexreeder\.chatgpt\.site\/sitemap\.xml/);
+  assert.match(await robots.text(), /Sitemap: https:\/\/www\.discoveryindex\.arclabshq\.com\/sitemap\.xml/);
 
   const sitemap = await worker.fetch(new Request("https://example.test/sitemap.xml"), env);
   const sitemapBody = await sitemap.text();
   assert.equal(sitemap.status, 200);
-  assert.match(sitemapBody, /<loc>https:\/\/discovery-index\.alexreeder\.chatgpt\.site\/discoveries\/record<\/loc>/);
+  assert.match(sitemapBody, /<loc>https:\/\/www\.discoveryindex\.arclabshq\.com\/discoveries\/record<\/loc>/);
 
   const record = await worker.fetch(
     new Request("https://example.test/discoveries/record", {
@@ -169,6 +169,13 @@ test("does not turn missing API or write requests into the app shell", async () 
     assert.equal(response.status, 404);
     assert.equal(calls, 1);
   }
+});
+
+test("fails closed when the API Worker is deployed without an asset binding", async () => {
+  const response = await worker.fetch(new Request("https://example.test/not-found"), {});
+
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), { error: "Not found." });
 });
 
 test("public registry exposes verified and under-review records but not candidates", async () => {
@@ -650,23 +657,9 @@ test("candidate intake skips an overlapping source scan", async () => {
   assert.equal(statements.some((sql) => sql.includes("INSERT OR IGNORE INTO intake_runs")), true);
 });
 
-test("emits the files required by Sites packaging", async () => {
+test("emits the files required by the Vercel static deployment", async () => {
   await access(new URL("../dist/client/index.html", import.meta.url));
   await access(new URL("../dist/client/about/index.html", import.meta.url));
   await access(new URL("../dist/client/method/index.html", import.meta.url));
   await access(new URL("../dist/client/how-it-works/index.html", import.meta.url));
-  await access(new URL("../dist/server/index.js", import.meta.url));
-  await access(new URL("../dist/.openai/hosting.json", import.meta.url));
-  await access(new URL("../dist/.openai/drizzle/0001_discovery_registry.sql", import.meta.url));
-  await access(new URL("../dist/.openai/drizzle/0002_production_registry.sql", import.meta.url));
-  await access(new URL("../dist/.openai/drizzle/0004_plain_language_registry.sql", import.meta.url));
-  await access(new URL("../dist/.openai/drizzle/0005_research_significance.sql", import.meta.url));
-  await access(new URL("../dist/.openai/drizzle/0006_reader_first_registry.sql", import.meta.url));
-  await access(new URL("../dist/.openai/drizzle/0007_discovery_history.sql", import.meta.url));
-  await access(
-    new URL("../dist/.openai/drizzle/0008_discovery_ai_global_backfill.sql", import.meta.url),
-  );
-  await access(
-    new URL("../dist/.openai/drizzle/0009_intake_concurrency_guard.sql", import.meta.url),
-  );
 });

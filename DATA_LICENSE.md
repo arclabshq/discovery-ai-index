@@ -5,7 +5,7 @@ editorial notes, and documentation authored for Discovery AI Index are licensed 
 [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
 
 When reusing this material, attribute **Discovery AI Index / Arc Labs LLC** and link to
-<https://discovery-index.alexreeder.chatgpt.site>.
+<https://www.discoveryindex.arclabshq.com>.
 
 This license does not cover third-party papers, abstracts, datasets, images, trademarks, or other
 source material linked from the registry. Those remain subject to their owners' terms. The
