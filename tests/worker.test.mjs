@@ -240,6 +240,53 @@ test("public discovery endpoint rejects candidate access", async () => {
   assert.equal(response.status, 400);
 });
 
+test("candidate intake route fails closed without a configured token", async () => {
+  const response = await worker.fetch(
+    new Request("https://example.test/api/intake/run", { method: "POST" }),
+    { INTAKE_ENABLED: "false" },
+  );
+
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await response.json(), {
+    error: "Manual intake is disabled until INTAKE_TOKEN is configured.",
+  });
+});
+
+test("candidate intake route rejects the wrong token", async () => {
+  const response = await worker.fetch(
+    new Request("https://example.test/api/intake/run", {
+      method: "POST",
+      headers: { authorization: "Bearer wrong-token" },
+    }),
+    { INTAKE_ENABLED: "false", INTAKE_TOKEN: "intake-test" },
+  );
+
+  assert.equal(response.status, 401);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await response.json(), { error: "Intake authorization is required." });
+});
+
+test("candidate intake route returns a candidate-only safe response with the correct token", async () => {
+  const response = await worker.fetch(
+    new Request("https://example.test/api/intake/run", {
+      method: "POST",
+      headers: { authorization: "Bearer intake-test" },
+    }),
+    { INTAKE_ENABLED: "false", INTAKE_TOKEN: "intake-test" },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await response.json(), {
+    status: "disabled",
+    candidatesSeen: 0,
+    candidatesAdded: 0,
+    mode: "candidate_only",
+    publicRecordsChanged: 0,
+  });
+});
+
 test("editorial writes fail closed without a configured token", async () => {
   const response = await worker.fetch(
     new Request("https://example.test/api/editorial/discoveries/example/transition", {

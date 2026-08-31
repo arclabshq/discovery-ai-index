@@ -85,16 +85,20 @@ replace the D1 database identifier in `wrangler.jsonc` with their own database.
 
 ## Daily candidate intake
 
-The scheduled workflow runs daily at `10:17 UTC` and can also be started manually from GitHub. It
-sends a protected `POST` request to `/api/intake/run`; it does not check out, edit, commit, or deploy
-the repository.
+The scheduled workflow is configured to run daily at `10:17 UTC` and can also be started manually
+from GitHub. It sends a protected `POST` request to `/api/intake/run`; it does not check out, edit,
+commit, or deploy the repository.
+
+The GitHub workflow is manually paused during the current credential incident. Follow
+[`CANDIDATE_INTAKE_RUNBOOK.md`](CANDIDATE_INTAKE_RUNBOOK.md) before sending the manual request below,
+dispatching the workflow, or re-enabling its schedule.
 
 To run the same intake manually:
 
 ```bash
 curl --fail-with-body --request POST \
   --header "Authorization: Bearer $DISCOVERY_AI_INTAKE_TOKEN" \
-  https://www.discoveryindex.arclabshq.com/api/intake/run
+  https://discovery-ai-index-api.helloarclabshq.workers.dev/api/intake/run
 ```
 
 Every source run is bounded, deduplicated, logged in `intake_runs`, and protected against overlap. A

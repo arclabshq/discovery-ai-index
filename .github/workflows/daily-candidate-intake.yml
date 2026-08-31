@@ -19,7 +19,7 @@ jobs:
       - name: Trigger candidate-only source scan
         shell: bash
         env:
-          INTAKE_URL: https://www.discoveryindex.arclabshq.com/api/intake/run
+          INTAKE_URL: https://discovery-ai-index-api.helloarclabshq.workers.dev/api/intake/run
           INTAKE_TOKEN: ${{ secrets.DISCOVERY_AI_INTAKE_TOKEN }}
         run: |
           set -euo pipefail
@@ -52,14 +52,32 @@ jobs:
           import { readFileSync } from "node:fs";
 
           const result = JSON.parse(readFileSync(process.argv[2], "utf8"));
-          if (!["completed", "skipped"].includes(result.status)) {
-            throw new Error(`Unexpected intake status: ${String(result.status)}`);
-          }
           if (result.mode !== "candidate_only" || result.publicRecordsChanged !== 0) {
             throw new Error("The intake endpoint did not confirm the candidate-only policy.");
           }
-          console.log(
-            `Candidate intake ${result.status}: ${result.candidatesSeen ?? 0} seen, ` +
-              `${result.candidatesAdded ?? 0} added, 0 public records changed.`,
-          );
+
+          if (["partial", "failed"].includes(result.status)) {
+            const failedSourceKeys = [...new Set(
+              (Array.isArray(result.sources) ? result.sources : [])
+                .filter((source) => source?.status === "failed")
+                .map((source) => String(source?.sourceKey ?? "")
+                  .replace(/[^A-Za-z0-9._-]+/g, "-")
+                  .replace(/^-+|-+$/g, "")
+                  .slice(0, 80))
+                .filter(Boolean),
+            )].sort();
+            const annotation = failedSourceKeys.length
+              ? failedSourceKeys.join(",")
+              : "unknown-source";
+            console.error(`::error title=Candidate intake ${result.status}::${annotation}`);
+            process.exitCode = 1;
+          } else {
+            if (!["completed", "skipped"].includes(result.status)) {
+              throw new Error("The intake endpoint returned an unexpected status.");
+            }
+            console.log(
+              `Candidate intake ${result.status}: ${result.candidatesSeen ?? 0} seen, ` +
+                `${result.candidatesAdded ?? 0} added, 0 public records changed.`,
+            );
+          }
           NODE
