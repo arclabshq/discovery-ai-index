@@ -1,5 +1,8 @@
 # Discovery AI Index
 
+Built by [Arc Labs](https://www.arclabshq.com/?utm_source=github&utm_medium=referral&utm_campaign=studio-launch), an independent digital studio.
+[See how the research workflow was built](https://www.arclabshq.com/insights/discovery-index-research-automation-case-study).
+
 [Discovery AI Index](https://www.discoveryindex.arclabshq.com) is an evidence-first catalog of
 discoveries materially enabled by AI. It explains what changed, why the result matters, how AI
 contributed, and the strongest evidence available.
