@@ -1173,6 +1173,7 @@ function Footer({ lastEditorialUpdateAt }) {
         <a href="/">Discoveries</a>
         <a href="/method">Method</a>
         <a href="/about">About</a>
+        <a href="https://www.arclabshq.com/?utm_source=discovery-index&amp;utm_medium=referral&amp;utm_campaign=studio-launch">Built by Arc Labs</a>
       </nav>
       <span>
         {lastEditorialUpdateAt
